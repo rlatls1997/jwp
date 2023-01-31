@@ -3,7 +3,9 @@ package org.hamstudy.chap02;
 import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class StringCalculatorTest {
 
@@ -14,54 +16,25 @@ class StringCalculatorTest {
 		stringCalculator = new StringCalculator();
 	}
 
-	@Test
-	void add_When_NormalCase_Expect_Sum() {
-		String text = "1,2:3";
-
+	@ParameterizedTest
+	@ValueSource(strings = {"6", "5,1", "4:2", "1,2,3", "1:2:3", "1,2:3", "1:2,3", "//;\n1;2;3", "//&\n1&2&3", "//#\n1#2#3"})
+	void add_When_NormalCase_Expect_Sum(String text) {
 		int sum = stringCalculator.add(text);
 
 		assertEquals(6, sum);
 	}
 
-	@Test
-	void add_When_SingleNumber_Expect_Sum() {
-		String text = "1";
-
-		int sum = stringCalculator.add(text);
-
-		assertEquals(1, sum);
-	}
-
-	@Test
-	void add_When_WithCustomDelimiter_Expect_Sum() {
-		String text = "//;\n1;2;3";
-
-		int sum = stringCalculator.add(text);
-
-		assertEquals(6, sum);
-	}
-
-	@Test
-	void add_When_Null_Expect_Zero() {
-		int sum = stringCalculator.add(null);
-
-		assertEquals(0, sum);
-	}
-
-	@Test
-	void add_When_Blank_Expect_Zero() {
-		String text = "";
-
+	@ParameterizedTest
+	@NullAndEmptySource
+	void add_When_Null_And_Blank_Expect_Zero(String text) {
 		int sum = stringCalculator.add(text);
 
 		assertEquals(0, sum);
 	}
 
-	@Test
-	void add_When_Negative_Expect_Throw() {
-		assertThrows(IllegalArgumentException.class, () -> {
-			String text = "1,-2:3";
-			stringCalculator.add(text);
-		});
+	@ParameterizedTest
+	@ValueSource(strings = {"-6", "5,-1", "-4:2", "1,-2,3", "-1:2:-3", "-1,-2:-3", "1:-2,-3", "//;\n-1;2;3", "//&\n1&-2&3", "//#\n1#2#-3"})
+	void add_When_Negative_Expect_Throw(String text) {
+		assertThrows(IllegalArgumentException.class, () -> stringCalculator.add(text));
 	}
 }

@@ -8,9 +8,13 @@ public class StringCalculator {
 
 	private static final Pattern DELIMITER = Pattern.compile("[,:]");
 
-	private static final Pattern CUSTOM_DELIMITER_REGEX = Pattern.compile("^\\/\\/(?<delimiter>.)\\n(?<expression>.*)");
+	private static final String DELIMITER_GROUP_NAME = "delimiter";
 
-	int add(String text) {
+	private static final String EXPRESSION_GROUP_NAME = "expression";
+
+	private static final Pattern CUSTOM_DELIMITER_REGEX = Pattern.compile("^\\/\\/(?<" + DELIMITER_GROUP_NAME + ">.)\\n(?<" + EXPRESSION_GROUP_NAME + ">.*)");
+
+	public int add(String text) {
 		if (Objects.isNull(text) || text.isBlank()) {
 			return 0;
 		}
@@ -25,10 +29,12 @@ public class StringCalculator {
 	}
 
 	private int addNumbersSplitByCustomDelimiter(Matcher matcher) {
-		Pattern customDelimiter = getCustomDelimiter(matcher);
-		String expression = matcher.group("expression");
+		String delimiter = matcher.group(DELIMITER_GROUP_NAME);
+		String expression = matcher.group(EXPRESSION_GROUP_NAME);
 
-		return addSplitNumbers(expression, customDelimiter);
+		Pattern delimiterPattern = Pattern.compile(delimiter);
+
+		return addSplitNumbers(expression, delimiterPattern);
 	}
 
 	private int addSplitNumbers(String text, Pattern delimiter) {
@@ -45,11 +51,5 @@ public class StringCalculator {
 		}
 
 		return number;
-	}
-
-	private Pattern getCustomDelimiter(Matcher matcher) {
-		String delimiter = matcher.group("delimiter");
-
-		return Pattern.compile(delimiter);
 	}
 }
