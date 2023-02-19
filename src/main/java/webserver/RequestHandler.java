@@ -16,7 +16,6 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import model.User;
 import user.UserProcessor;
 import util.HttpRequestUtils;
 import util.IOUtils;
@@ -52,10 +51,14 @@ public class RequestHandler extends Thread {
 			DataOutputStream dos = new DataOutputStream(out);
 
 			// 회원가입
-			if(httpRequestUrl.startsWith("/user/create")){
+			if (httpRequestUrl.startsWith("/user/create")) {
 				Map<String, String> httpRequestBodyMap = HttpRequestUtils.parseRequestBody(httpRequestBodyString);
 				userProcessor.createUser(httpRequestBodyMap);
-			}else{
+
+				byte[] body = Files.readAllBytes(new File("./webapp/index.html").toPath());
+				response302HeaderLocationIndexHtml(dos, body.length);
+				responseBody(dos, body);
+			} else {
 				byte[] body = Files.readAllBytes(new File("./webapp" + httpRequestUrl).toPath());
 				response200Header(dos, body.length);
 				responseBody(dos, body);
@@ -78,7 +81,7 @@ public class RequestHandler extends Thread {
 		return 0;
 	}
 
-	private String getHttpQueryString(String httpQueryString){
+	private String getHttpQueryString(String httpQueryString) {
 		int queryStringStartIndex = httpQueryString.indexOf("?") + 1;
 		return httpQueryString.substring(queryStringStartIndex);
 	}
@@ -110,6 +113,18 @@ public class RequestHandler extends Thread {
 		log.info("HttpRequest print end.");
 
 		return httpRequestContents;
+	}
+
+	private void response302HeaderLocationIndexHtml(DataOutputStream dos, int lengthOfBodyContent) {
+		try {
+			dos.writeBytes("HTTP/1.1 302 FOUND \r\n");
+			dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
+			dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
+			dos.writeBytes("Location: /index.html\r\n");
+			dos.writeBytes("\r\n");
+		} catch (IOException e) {
+			log.error(e.getMessage());
+		}
 	}
 
 	private void response200Header(DataOutputStream dos, int lengthOfBodyContent) {
