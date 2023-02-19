@@ -12,10 +12,12 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import auth.AuthProcessor;
 import user.UserProcessor;
 import util.HttpRequestUtils;
 import util.IOUtils;
@@ -27,11 +29,13 @@ public class RequestHandler extends Thread {
 
 	private Socket connection;
 
-	private UserProcessor userProcessor;
+	private final UserProcessor userProcessor;
+	private final AuthProcessor authProcessor;
 
-	public RequestHandler(Socket connectionSocket, UserProcessor userProcessor) {
+	public RequestHandler(Socket connectionSocket, UserProcessor userProcessor, AuthProcessor authProcessor) {
 		this.connection = connectionSocket;
 		this.userProcessor = userProcessor;
+		this.authProcessor = authProcessor;
 	}
 
 	public void run() {
@@ -44,22 +48,35 @@ public class RequestHandler extends Thread {
 			BufferedReader br = new BufferedReader(isr);
 			List<String> httpRequestContents = getHttpRequestContents(br);
 			String httpRequestStartLine = httpRequestContents.get(START_LINE);
-			String httpRequestUrl = getHttpRequestUrl(httpRequestStartLine);
+			String httpRequestPath = getHttpRequestPath(httpRequestStartLine);
+			String httpRequestQueryString = getHttpQueryString(httpRequestStartLine);
+			String httpCookie = getCookie(httpRequestContents);
 			int contentLength = getContentLength(httpRequestContents);
 			String httpRequestBodyString = IOUtils.readData(br, contentLength);
+			Map<String, String> httpRequestBodyMap = HttpRequestUtils.parseRequestBody(httpRequestBodyString);
 
 			DataOutputStream dos = new DataOutputStream(out);
 
-			// 회원가입
-			if (httpRequestUrl.startsWith("/user/create")) {
-				Map<String, String> httpRequestBodyMap = HttpRequestUtils.parseRequestBody(httpRequestBodyString);
+			if (httpRequestPath.equals("/user/create")) { // 회원가입
 				userProcessor.createUser(httpRequestBodyMap);
 
 				byte[] body = Files.readAllBytes(new File("./webapp/index.html").toPath());
 				response302HeaderLocationIndexHtml(dos, body.length);
 				responseBody(dos, body);
+			} else if (httpRequestPath.equals("/user/login")) { // 로그인
+				boolean isLoginSuccess = authProcessor.login(httpRequestBodyMap);
+
+				if (isLoginSuccess) {
+					byte[] body = Files.readAllBytes(new File("./webapp/index.html").toPath());
+					response302HeaderWithLoginedCookie(dos, body.length, true, "/index.html");
+					responseBody(dos, body);
+				} else {
+					byte[] body = Files.readAllBytes(new File("./webapp/user/login_failed.html").toPath());
+					response302HeaderWithLoginedCookie(dos, body.length, false, "/user/login_failed.html");
+					responseBody(dos, body);
+				}
 			} else {
-				byte[] body = Files.readAllBytes(new File("./webapp" + httpRequestUrl).toPath());
+				byte[] body = Files.readAllBytes(new File("./webapp" + httpRequestPath).toPath());
 				response200Header(dos, body.length);
 				responseBody(dos, body);
 			}
@@ -81,9 +98,40 @@ public class RequestHandler extends Thread {
 		return 0;
 	}
 
-	private String getHttpQueryString(String httpQueryString) {
-		int queryStringStartIndex = httpQueryString.indexOf("?") + 1;
-		return httpQueryString.substring(queryStringStartIndex);
+	private String getCookie(List<String> httpRequestContents){
+		for (String httpRequestContent : httpRequestContents) {
+			if (httpRequestContent.startsWith("Cookie")) {
+				int cookieValueStartIndex = httpRequestContent.indexOf(":") + 1;
+
+				return httpRequestContent.substring(cookieValueStartIndex).trim();
+			}
+		}
+
+		return "";
+	}
+
+	private String getHttpRequestPath(String httpRequestStartLine) {
+		String httpRequestUrl = getHttpRequestUrl(httpRequestStartLine);
+
+		int queryStringStartIndex = httpRequestUrl.indexOf("?");
+
+		if (queryStringStartIndex == -1) {
+			return httpRequestUrl;
+		}
+
+		return httpRequestUrl.substring(0, queryStringStartIndex);
+	}
+
+	private String getHttpQueryString(String httpRequestStartLine) {
+		String httpRequestUrl = getHttpRequestUrl(httpRequestStartLine);
+
+		int queryStringStartIndex = httpRequestUrl.indexOf("?");
+
+		if (queryStringStartIndex == -1) {
+			return "";
+		}
+
+		return httpRequestUrl.substring(queryStringStartIndex + 1);
 	}
 
 	private String getHttpRequestUrl(String httpRequestStartLine) {
@@ -121,6 +169,25 @@ public class RequestHandler extends Thread {
 			dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
 			dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
 			dos.writeBytes("Location: /index.html\r\n");
+			dos.writeBytes("\r\n");
+		} catch (IOException e) {
+			log.error(e.getMessage());
+		}
+	}
+
+	private void response302HeaderWithLoginedCookie(DataOutputStream dos, int lengthOfBodyContent, boolean isLoginSuccess, String location) {
+		try {
+			dos.writeBytes("HTTP/1.1 302 FOUND \r\n");
+			dos.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
+			dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
+			dos.writeBytes("Location: " + location + "\r\n");
+
+			if (isLoginSuccess) {
+				dos.writeBytes("Set-Cookie: logined=true\r\n");
+			} else {
+				dos.writeBytes("Set-Cookie: logined=false\r\n");
+			}
+
 			dos.writeBytes("\r\n");
 		} catch (IOException e) {
 			log.error(e.getMessage());
