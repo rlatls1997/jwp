@@ -8,8 +8,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -18,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import auth.AuthProcessor;
+import model.User;
 import user.UserProcessor;
 import util.HttpRequestUtils;
 import util.IOUtils;
@@ -75,6 +78,29 @@ public class RequestHandler extends Thread {
 					response302HeaderWithLoginedCookie(dos, body.length, false, "/user/login_failed.html");
 					responseBody(dos, body);
 				}
+			} else if (httpRequestPath.equals("/user/list")) {
+				Map<String, String> cookieMap = HttpRequestUtils.parseCookies(httpCookie);
+				String logined = cookieMap.get("logined");
+
+				if (Objects.isNull(logined)) {
+					byte[] body = Files.readAllBytes(new File("./webapp/user/login.html").toPath());
+					response200Header(dos, body.length);
+					responseBody(dos, body);
+				} else {
+					boolean isLogined = Boolean.parseBoolean(logined);
+
+					if (isLogined) {
+						String userListHtml = userProcessor.getUsers();
+						byte[] body = userListHtml.getBytes();
+						response200Header(dos, body.length);
+						responseBody(dos, body);
+					} else{
+						byte[] body = Files.readAllBytes(new File("./webapp/user/login.html").toPath());
+						response200Header(dos, body.length);
+						responseBody(dos, body);
+					}
+				}
+
 			} else {
 				byte[] body = Files.readAllBytes(new File("./webapp" + httpRequestPath).toPath());
 				response200Header(dos, body.length);
@@ -98,7 +124,7 @@ public class RequestHandler extends Thread {
 		return 0;
 	}
 
-	private String getCookie(List<String> httpRequestContents){
+	private String getCookie(List<String> httpRequestContents) {
 		for (String httpRequestContent : httpRequestContents) {
 			if (httpRequestContent.startsWith("Cookie")) {
 				int cookieValueStartIndex = httpRequestContent.indexOf(":") + 1;
@@ -193,6 +219,7 @@ public class RequestHandler extends Thread {
 			log.error(e.getMessage());
 		}
 	}
+
 
 	private void response200Header(DataOutputStream dos, int lengthOfBodyContent) {
 		try {
