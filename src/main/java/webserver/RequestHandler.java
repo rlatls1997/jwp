@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import model.User;
 import user.UserProcessor;
 import util.HttpRequestUtils;
+import util.IOUtils;
 
 public class RequestHandler extends Thread {
 	private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
@@ -45,14 +46,15 @@ public class RequestHandler extends Thread {
 			List<String> httpRequestContents = getHttpRequestContents(br);
 			String httpRequestStartLine = httpRequestContents.get(START_LINE);
 			String httpRequestUrl = getHttpRequestUrl(httpRequestStartLine);
-			String httpQueryString = getHttpQueryString(httpRequestUrl);
+			int contentLength = getContentLength(httpRequestContents);
+			String httpRequestBodyString = IOUtils.readData(br, contentLength);
 
 			DataOutputStream dos = new DataOutputStream(out);
 
 			// 회원가입
 			if(httpRequestUrl.startsWith("/user/create")){
-				Map<String, String> httpQueryStringMap = HttpRequestUtils.parseQueryString(httpQueryString);
-				userProcessor.createUser(httpQueryStringMap);
+				Map<String, String> httpRequestBodyMap = HttpRequestUtils.parseRequestBody(httpRequestBodyString);
+				userProcessor.createUser(httpRequestBodyMap);
 			}else{
 				byte[] body = Files.readAllBytes(new File("./webapp" + httpRequestUrl).toPath());
 				response200Header(dos, body.length);
@@ -61,6 +63,19 @@ public class RequestHandler extends Thread {
 		} catch (IOException e) {
 			log.error(e.getMessage());
 		}
+	}
+
+	private int getContentLength(List<String> httpRequestContents) {
+		for (String httpRequestContent : httpRequestContents) {
+			if (httpRequestContent.startsWith("Content-Length")) {
+				int contentLengthValueStartIndex = httpRequestContent.indexOf(":") + 1;
+				String contentLengthValueString = httpRequestContent.substring(contentLengthValueStartIndex).trim();
+
+				return Integer.parseInt(contentLengthValueString);
+			}
+		}
+
+		return 0;
 	}
 
 	private String getHttpQueryString(String httpQueryString){

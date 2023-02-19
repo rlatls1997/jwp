@@ -7,16 +7,16 @@ import model.User;
 
 public class UserProcessor {
 
-	public void createUser(Map<String, String> queryStringMap) {
-		User user = makeUser(queryStringMap);
+	public void createUser(Map<String, String> requestBodyMap) {
+		User user = makeUser(requestBodyMap);
 		DataBase.addUser(user);
 	}
 
-	private User makeUser(Map<String, String> queryStringMap) {
-		String userId = queryStringMap.get("userId");
-		String password = queryStringMap.get("password");
-		String name = queryStringMap.get("name");
-		String email = queryStringMap.get("email");
+	private User makeUser(Map<String, String> requestBodyMap) {
+		String userId = requestBodyMap.get("userId");
+		String password = requestBodyMap.get("password");
+		String name = requestBodyMap.get("name");
+		String email = requestBodyMap.get("email");
 
 		return new User(userId, password, name, email);
 	}
