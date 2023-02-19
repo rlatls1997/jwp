@@ -11,9 +11,14 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import model.User;
+import user.UserProcessor;
+import util.HttpRequestUtils;
 
 public class RequestHandler extends Thread {
 	private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
@@ -22,8 +27,11 @@ public class RequestHandler extends Thread {
 
 	private Socket connection;
 
-	public RequestHandler(Socket connectionSocket) {
+	private UserProcessor userProcessor;
+
+	public RequestHandler(Socket connectionSocket, UserProcessor userProcessor) {
 		this.connection = connectionSocket;
+		this.userProcessor = userProcessor;
 	}
 
 	public void run() {
@@ -36,18 +44,31 @@ public class RequestHandler extends Thread {
 			BufferedReader br = new BufferedReader(isr);
 			List<String> httpRequestContents = getHttpRequestContents(br);
 			String httpRequestStartLine = httpRequestContents.get(START_LINE);
-			String requestUrl = getRequestUrl(httpRequestStartLine);
+			String httpRequestUrl = getHttpRequestUrl(httpRequestStartLine);
+			String httpQueryString = getHttpQueryString(httpRequestUrl);
 
 			DataOutputStream dos = new DataOutputStream(out);
-			byte[] body = Files.readAllBytes(new File("./webapp" + requestUrl).toPath());
-			response200Header(dos, body.length);
-			responseBody(dos, body);
+
+			// 회원가입
+			if(httpRequestUrl.startsWith("/user/create")){
+				Map<String, String> httpQueryStringMap = HttpRequestUtils.parseQueryString(httpQueryString);
+				userProcessor.createUser(httpQueryStringMap);
+			}else{
+				byte[] body = Files.readAllBytes(new File("./webapp" + httpRequestUrl).toPath());
+				response200Header(dos, body.length);
+				responseBody(dos, body);
+			}
 		} catch (IOException e) {
 			log.error(e.getMessage());
 		}
 	}
 
-	private String getRequestUrl(String httpRequestStartLine) {
+	private String getHttpQueryString(String httpQueryString){
+		int queryStringStartIndex = httpQueryString.indexOf("?") + 1;
+		return httpQueryString.substring(queryStringStartIndex);
+	}
+
+	private String getHttpRequestUrl(String httpRequestStartLine) {
 		String[] tokens = httpRequestStartLine.split(" ");
 		return tokens[1];
 	}
