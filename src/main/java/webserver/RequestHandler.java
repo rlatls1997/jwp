@@ -94,7 +94,7 @@ public class RequestHandler extends Thread {
 						byte[] body = userListHtml.getBytes();
 						response200Header(dos, body.length);
 						responseBody(dos, body);
-					} else{
+					} else {
 						byte[] body = Files.readAllBytes(new File("./webapp/user/login.html").toPath());
 						response200Header(dos, body.length);
 						responseBody(dos, body);
@@ -103,8 +103,14 @@ public class RequestHandler extends Thread {
 
 			} else {
 				byte[] body = Files.readAllBytes(new File("./webapp" + httpRequestPath).toPath());
-				response200Header(dos, body.length);
-				responseBody(dos, body);
+
+				if (httpRequestPath.endsWith(".css")) {
+					responseCss200Header(dos, body.length);
+					responseBody(dos, body);
+				} else {
+					response200Header(dos, body.length);
+					responseBody(dos, body);
+				}
 			}
 		} catch (IOException e) {
 			log.error(e.getMessage());
@@ -220,6 +226,16 @@ public class RequestHandler extends Thread {
 		}
 	}
 
+	private void responseCss200Header(DataOutputStream dos, int lengthOfBodyContent) {
+		try {
+			dos.writeBytes("HTTP/1.1 200 OK \r\n");
+			dos.writeBytes("Content-Type: text/css;charset=utf-8\r\n");
+			dos.writeBytes("Content-Length: " + lengthOfBodyContent + "\r\n");
+			dos.writeBytes("\r\n");
+		} catch (IOException e) {
+			log.error(e.getMessage());
+		}
+	}
 
 	private void response200Header(DataOutputStream dos, int lengthOfBodyContent) {
 		try {
