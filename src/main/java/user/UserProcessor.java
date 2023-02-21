@@ -2,18 +2,32 @@ package user;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 
 import db.DataBase;
 import model.User;
 
 public class UserProcessor {
 
-	public void createUser(Map<String, String> requestBodyMap) {
+	public static void createUser(Map<String, String> requestBodyMap) {
 		User user = makeUser(requestBodyMap);
 		DataBase.addUser(user);
 	}
 
-	public String getUsers() {
+	public static boolean isValidUser(Map<String, String> httpRequestBodyMap) {
+		String userId = httpRequestBodyMap.get("userId");
+		String password = httpRequestBodyMap.get("password");
+
+		User user = DataBase.findUserById(userId);
+
+		if (Objects.isNull(user)) {
+			return false;
+		}
+
+		return password.equals(user.getPassword());
+	}
+
+	public static String getUsers() {
 		Collection<User> users = DataBase.findAll();
 
 		StringBuilder sb = new StringBuilder();
@@ -37,7 +51,7 @@ public class UserProcessor {
 		return sb.toString();
 	}
 
-	private User makeUser(Map<String, String> requestBodyMap) {
+	private static User makeUser(Map<String, String> requestBodyMap) {
 		String userId = requestBodyMap.get("userId");
 		String password = requestBodyMap.get("password");
 		String name = requestBodyMap.get("name");

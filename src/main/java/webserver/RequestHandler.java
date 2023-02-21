@@ -8,10 +8,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -19,8 +17,6 @@ import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import auth.AuthProcessor;
-import model.User;
 import user.UserProcessor;
 import util.HttpRequestUtils;
 import util.IOUtils;
@@ -32,13 +28,8 @@ public class RequestHandler extends Thread {
 
 	private Socket connection;
 
-	private final UserProcessor userProcessor;
-	private final AuthProcessor authProcessor;
-
-	public RequestHandler(Socket connectionSocket, UserProcessor userProcessor, AuthProcessor authProcessor) {
+	public RequestHandler(Socket connectionSocket) {
 		this.connection = connectionSocket;
-		this.userProcessor = userProcessor;
-		this.authProcessor = authProcessor;
 	}
 
 	public void run() {
@@ -49,72 +40,92 @@ public class RequestHandler extends Thread {
 			// TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
 			InputStreamReader isr = new InputStreamReader(in);
 			BufferedReader br = new BufferedReader(isr);
+
 			List<String> httpRequestContents = getHttpRequestContents(br);
-			String httpRequestStartLine = httpRequestContents.get(START_LINE);
-			String httpRequestPath = getHttpRequestPath(httpRequestStartLine);
-			String httpRequestQueryString = getHttpQueryString(httpRequestStartLine);
+			String httpRequestPath = getHttpRequestPath(httpRequestContents);
 			String httpCookie = getCookie(httpRequestContents);
-			int contentLength = getContentLength(httpRequestContents);
-			String httpRequestBodyString = IOUtils.readData(br, contentLength);
-			Map<String, String> httpRequestBodyMap = HttpRequestUtils.parseRequestBody(httpRequestBodyString);
+			Map<String, String> httpRequestBodyMap = getHttpRequestBodyMap(br, httpRequestContents);
 
 			DataOutputStream dos = new DataOutputStream(out);
 
-			if (httpRequestPath.equals("/user/create")) { // 회원가입
-				userProcessor.createUser(httpRequestBodyMap);
-
-				byte[] body = Files.readAllBytes(new File("./webapp/index.html").toPath());
-				response302HeaderLocationIndexHtml(dos, body.length);
-				responseBody(dos, body);
-			} else if (httpRequestPath.equals("/user/login")) { // 로그인
-				boolean isLoginSuccess = authProcessor.login(httpRequestBodyMap);
-
-				if (isLoginSuccess) {
-					byte[] body = Files.readAllBytes(new File("./webapp/index.html").toPath());
-					response302HeaderWithLoginedCookie(dos, body.length, true, "/index.html");
-					responseBody(dos, body);
-				} else {
-					byte[] body = Files.readAllBytes(new File("./webapp/user/login_failed.html").toPath());
-					response302HeaderWithLoginedCookie(dos, body.length, false, "/user/login_failed.html");
-					responseBody(dos, body);
-				}
-			} else if (httpRequestPath.equals("/user/list")) {
-				Map<String, String> cookieMap = HttpRequestUtils.parseCookies(httpCookie);
-				String logined = cookieMap.get("logined");
-
-				if (Objects.isNull(logined)) {
-					byte[] body = Files.readAllBytes(new File("./webapp/user/login.html").toPath());
-					response200Header(dos, body.length);
-					responseBody(dos, body);
-				} else {
-					boolean isLogined = Boolean.parseBoolean(logined);
-
-					if (isLogined) {
-						String userListHtml = userProcessor.getUsers();
-						byte[] body = userListHtml.getBytes();
-						response200Header(dos, body.length);
-						responseBody(dos, body);
-					} else {
-						byte[] body = Files.readAllBytes(new File("./webapp/user/login.html").toPath());
-						response200Header(dos, body.length);
-						responseBody(dos, body);
-					}
-				}
-
-			} else {
-				byte[] body = Files.readAllBytes(new File("./webapp" + httpRequestPath).toPath());
-
-				if (httpRequestPath.endsWith(".css")) {
-					responseCss200Header(dos, body.length);
-					responseBody(dos, body);
-				} else {
-					response200Header(dos, body.length);
-					responseBody(dos, body);
-				}
+			switch (httpRequestPath) {
+				case "/user/create" -> signUp(dos, httpRequestBodyMap);
+				case "/user/login" -> login(httpRequestBodyMap, dos);
+				case "/user/list" -> getUserList(httpCookie, dos);
+				default -> getResource(httpRequestPath, dos);
 			}
-		} catch (IOException e) {
-			log.error(e.getMessage());
+		} catch (IOException ioException) {
+			log.error(ioException.getMessage());
 		}
+	}
+
+	private void getResource(String httpRequestPath, DataOutputStream dos) throws IOException {
+		byte[] body = Files.readAllBytes(new File("./webapp" + httpRequestPath).toPath());
+
+		if (httpRequestPath.endsWith(".css")) {
+			responseCss200Header(dos, body.length);
+			responseBody(dos, body);
+			return;
+		}
+
+		response200Header(dos, body.length);
+		responseBody(dos, body);
+	}
+
+	private void getUserList(String httpCookie, DataOutputStream dos) throws IOException {
+		Map<String, String> cookieMap = HttpRequestUtils.parseCookies(httpCookie);
+		String logined = cookieMap.get("logined");
+
+		if (Objects.isNull(logined)) {
+			byte[] body = Files.readAllBytes(new File("./webapp/user/login.html").toPath());
+			response200Header(dos, body.length);
+			responseBody(dos, body);
+			return;
+		}
+
+		boolean isLogined = Boolean.parseBoolean(logined);
+
+		if (isLogined) {
+			String userListHtml = UserProcessor.getUsers();
+			byte[] body = userListHtml.getBytes();
+			response200Header(dos, body.length);
+			responseBody(dos, body);
+			return;
+		}
+
+		byte[] body = Files.readAllBytes(new File("./webapp/user/login.html").toPath());
+		response200Header(dos, body.length);
+		responseBody(dos, body);
+	}
+
+	private void login(Map<String, String> httpRequestBodyMap, DataOutputStream dos) throws IOException {
+		boolean isLoginSuccess = UserProcessor.isValidUser(httpRequestBodyMap);
+
+		if (isLoginSuccess) {
+			byte[] body = Files.readAllBytes(new File("./webapp/index.html").toPath());
+			response302HeaderWithLoginedCookie(dos, body.length, true, "/index.html");
+			responseBody(dos, body);
+			return;
+		}
+
+		byte[] body = Files.readAllBytes(new File("./webapp/user/login_failed.html").toPath());
+		response302HeaderWithLoginedCookie(dos, body.length, false, "/user/login_failed.html");
+		responseBody(dos, body);
+	}
+
+	private void signUp(DataOutputStream dos, Map<String, String> httpRequestBodyMap) throws IOException {
+		UserProcessor.createUser(httpRequestBodyMap);
+
+		byte[] body = Files.readAllBytes(new File("./webapp/index.html").toPath());
+		response302HeaderLocationIndexHtml(dos, body.length);
+		responseBody(dos, body);
+	}
+
+	public Map<String, String> getHttpRequestBodyMap(BufferedReader br, List<String> httpRequestContents) throws IOException {
+		int contentLength = getContentLength(httpRequestContents);
+		String httpRequestBodyString = IOUtils.readData(br, contentLength);
+
+		return HttpRequestUtils.parseRequestBody(httpRequestBodyString);
 	}
 
 	private int getContentLength(List<String> httpRequestContents) {
@@ -142,7 +153,8 @@ public class RequestHandler extends Thread {
 		return "";
 	}
 
-	private String getHttpRequestPath(String httpRequestStartLine) {
+	private String getHttpRequestPath(List<String> httpRequestContents) {
+		String httpRequestStartLine = httpRequestContents.get(START_LINE);
 		String httpRequestUrl = getHttpRequestUrl(httpRequestStartLine);
 
 		int queryStringStartIndex = httpRequestUrl.indexOf("?");
@@ -152,18 +164,6 @@ public class RequestHandler extends Thread {
 		}
 
 		return httpRequestUrl.substring(0, queryStringStartIndex);
-	}
-
-	private String getHttpQueryString(String httpRequestStartLine) {
-		String httpRequestUrl = getHttpRequestUrl(httpRequestStartLine);
-
-		int queryStringStartIndex = httpRequestUrl.indexOf("?");
-
-		if (queryStringStartIndex == -1) {
-			return "";
-		}
-
-		return httpRequestUrl.substring(queryStringStartIndex + 1);
 	}
 
 	private String getHttpRequestUrl(String httpRequestStartLine) {
