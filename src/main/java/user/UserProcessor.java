@@ -7,14 +7,16 @@ import java.util.Objects;
 import db.DataBase;
 import model.User;
 
-public class UserProcessor {
+public final class UserProcessor {
+	private UserProcessor() {
+	}
 
 	public static void createUser(Map<String, String> requestBodyMap) {
 		User user = makeUser(requestBodyMap);
 		DataBase.addUser(user);
 	}
 
-	public static boolean isValidUser(Map<String, String> httpRequestBodyMap) {
+	public static boolean isExistUser(Map<String, String> httpRequestBodyMap) {
 		String userId = httpRequestBodyMap.get("userId");
 		String password = httpRequestBodyMap.get("password");
 
