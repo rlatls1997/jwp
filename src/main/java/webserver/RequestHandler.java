@@ -1,13 +1,11 @@
 package webserver;
 
 import java.io.DataOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.nio.file.Files;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,39 +54,31 @@ public class RequestHandler extends Thread {
 	}
 
 	private void getRoot(DataOutputStream dataOutputStream) throws IOException {
-		byte[] body = Files.readAllBytes(new File("./webapp/index.html").toPath());
+		ResponseEntity responseEntity = new ResponseEntity(dataOutputStream);
 
-		ResponseEntity.response200Html()
-			.body(body)
-			.build()
-			.response(dataOutputStream);
+		responseEntity.forward("/index.html");
 	}
 
 	private void getResource(DataOutputStream dataOutputStream, RequestEntity requestEntity) throws IOException {
+		ResponseEntity responseEntity = new ResponseEntity(dataOutputStream);
 		String path = requestEntity.getPath();
-		byte[] body = Files.readAllBytes(new File("./webapp" + path).toPath());
 
-		String contentType = path.endsWith(".css") ? "text/css;charset=utf-8" : "text/html;charset=utf-8";
-
-		ResponseEntity.response200()
-			.contentType(contentType)
-			.body(body)
-			.build()
-			.response(dataOutputStream);
+		responseEntity.forward(path);
 	}
 
 	private void getUserList(DataOutputStream dataOutputStream, RequestEntity requestEntity) throws IOException {
 		String loginedCookie = requestEntity.getCookie("logined");
-
 		boolean isLogined = Boolean.parseBoolean(loginedCookie);
 
-		byte[] userListHtmlByte = UserProcessor.getUsers().getBytes();
-		byte[] body = isLogined ? userListHtmlByte : Files.readAllBytes(new File("./webapp/user/login.html").toPath());
+		ResponseEntity responseEntity = new ResponseEntity(dataOutputStream);
 
-		ResponseEntity.response200Html()
-			.body(body)
-			.build()
-			.response(dataOutputStream);
+		if (isLogined) {
+			byte[] userListHtmlByte = UserProcessor.getUsers().getBytes();
+			responseEntity.forward(userListHtmlByte);
+			return;
+		}
+
+		responseEntity.forward("/user/login.html");
 	}
 
 	private void login(DataOutputStream dataOutputStream, RequestEntity requestEntity) throws IOException {
@@ -97,15 +87,16 @@ public class RequestHandler extends Thread {
 
 		boolean isLoginSuccess = UserProcessor.isExistUser(userId, password);
 
-		byte[] body = isLoginSuccess ? Files.readAllBytes(new File("./webapp/index.html").toPath()) : Files.readAllBytes(new File("./webapp/user/login_failed.html").toPath());
-		String location = isLoginSuccess ? "/index.html" : "/user/login_failed.html";
+		ResponseEntity responseEntity = new ResponseEntity(dataOutputStream);
 
-		ResponseEntity.response302Html()
-			.body(body)
-			.location(location)
-			.addCookie("logined", String.valueOf(isLoginSuccess))
-			.build()
-			.response(dataOutputStream);
+		if (isLoginSuccess) {
+			responseEntity.addHeader("Set-Cookie", "logined=true;path=/;");
+			responseEntity.sendRedirect("/index.html");
+			return;
+		}
+
+		responseEntity.addHeader("Set-Cookie", "logined=false;path=/;");
+		responseEntity.sendRedirect("/user/login_failed.html");
 	}
 
 	private void signUp(DataOutputStream dataOutputStream, RequestEntity requestEntity) throws IOException {
@@ -116,11 +107,7 @@ public class RequestHandler extends Thread {
 
 		UserProcessor.createUser(userId, password, name, email);
 
-		byte[] body = Files.readAllBytes(new File("./webapp/index.html").toPath());
-		ResponseEntity.response302Html()
-			.body(body)
-			.location("/index.html")
-			.build()
-			.response(dataOutputStream);
+		ResponseEntity responseEntity = new ResponseEntity(dataOutputStream);
+		responseEntity.sendRedirect("/index.html");
 	}
 }
