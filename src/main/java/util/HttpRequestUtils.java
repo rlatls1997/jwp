@@ -4,8 +4,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import com.google.common.base.Strings;
@@ -76,6 +78,69 @@ public class HttpRequestUtils {
 		}
 
 		return httpRequestContents;
+	}
+
+	public static String getRequestMethod(String[] startLineElements) {
+		return startLineElements[0];
+	}
+
+	public static String getRequestPath(String[] startLineElements) {
+		String requestUrl = startLineElements[1];
+		int queryStringStartIndex = requestUrl.indexOf("?");
+
+		if (queryStringStartIndex == -1) {
+			return requestUrl;
+		}
+
+		return requestUrl.substring(0, queryStringStartIndex);
+	}
+
+	public static String getRequestProtocol(String[] startLineElements) {
+		return startLineElements[2];
+	}
+
+	public static Map<String, String> getHeaders(List<String> httpRequestContents) {
+		Map<String, String> headers = new HashMap<>();
+
+		for (String httpRequestContent : httpRequestContents) {
+			Pair pair = parseHeader(httpRequestContent);
+
+			if (Objects.isNull(pair)) {
+				continue;
+			}
+
+			String headerName = pair.getKey();
+			String headerValue = pair.getValue();
+			headers.put(headerName, headerValue);
+		}
+
+		return headers;
+	}
+
+	public static Map<String, String> getParameters(BufferedReader bufferedReader, String[] startLineElements, Map<String, String> headers) throws IOException {
+		Map<String, String> parameters = new HashMap<>();
+
+		String contentLengthString = headers.get("Content-Length");
+
+		if (Objects.nonNull(contentLengthString)) {
+			String bodyString = IOUtils.readData(bufferedReader, Integer.parseInt(contentLengthString));
+
+			Map<String, String> body = parseRequestBody(bodyString);
+			parameters.putAll(body);
+		}
+
+		String requestUrl = startLineElements[1];
+		int queryStringStartIndex = requestUrl.indexOf("?");
+
+		if (queryStringStartIndex == -1) {
+			return parameters;
+		}
+
+		String wholeQueryString = requestUrl.substring(queryStringStartIndex);
+		Map<String, String> queryStrings = HttpRequestUtils.parseQueryString(wholeQueryString);
+		parameters.putAll(queryStrings);
+
+		return parameters;
 	}
 
 	public static class Pair {

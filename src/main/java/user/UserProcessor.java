@@ -1,7 +1,6 @@
 package user;
 
 import java.util.Collection;
-import java.util.Map;
 import java.util.Objects;
 
 import db.DataBase;
@@ -11,15 +10,12 @@ public final class UserProcessor {
 	private UserProcessor() {
 	}
 
-	public static void createUser(Map<String, String> requestBodyMap) {
-		User user = makeUser(requestBodyMap);
+	public static void createUser(String userId, String password, String name, String email) {
+		User user = new User(userId, password, name, email);
 		DataBase.addUser(user);
 	}
 
-	public static boolean isExistUser(Map<String, String> httpRequestBodyMap) {
-		String userId = httpRequestBodyMap.get("userId");
-		String password = httpRequestBodyMap.get("password");
-
+	public static boolean isExistUser(String userId, String password) {
 		User user = DataBase.findUserById(userId);
 
 		if (Objects.isNull(user)) {
@@ -51,14 +47,5 @@ public final class UserProcessor {
 		sb.append("</html>");
 
 		return sb.toString();
-	}
-
-	private static User makeUser(Map<String, String> requestBodyMap) {
-		String userId = requestBodyMap.get("userId");
-		String password = requestBodyMap.get("password");
-		String name = requestBodyMap.get("name");
-		String email = requestBodyMap.get("email");
-
-		return new User(userId, password, name, email);
 	}
 }
