@@ -19,52 +19,64 @@ public class ResponseEntity {
 		this.headers.put(key, value);
 	}
 
-	public void forward(String filePath) throws IOException {
-		dataOutputStream.writeBytes("HTTP/1.1 200 OK \r\n");
+	public void forward(String filePath) {
+		try {
+			dataOutputStream.writeBytes("HTTP/1.1 200 OK \r\n");
 
-		byte[] body = Files.readAllBytes(new File("./webapp" + filePath).toPath());
-		int contentLength = body.length;
+			byte[] body = Files.readAllBytes(new File("./webapp" + filePath).toPath());
+			int contentLength = body.length;
 
-		dataOutputStream.writeBytes("Content-Type: " + getContentType(filePath) + ";charset=utf-8\r\n");
-		dataOutputStream.writeBytes("Content-Length: " + contentLength + "\r\n");
+			dataOutputStream.writeBytes("Content-Type: " + getContentType(filePath) + ";charset=utf-8\r\n");
+			dataOutputStream.writeBytes("Content-Length: " + contentLength + "\r\n");
 
-		writeHeaders();
+			writeHeaders();
 
-		dataOutputStream.writeBytes("\r\n");
-		dataOutputStream.write(body, 0, body.length);
-		dataOutputStream.flush();
+			dataOutputStream.writeBytes("\r\n");
+			dataOutputStream.write(body, 0, body.length);
+			dataOutputStream.flush();
+		} catch (IOException exception) {
+			throw new IllegalStateException("Failed to forward.");
+		}
 	}
 
-	public void forward(byte[] body) throws IOException {
-		dataOutputStream.writeBytes("HTTP/1.1 200 OK \r\n");
+	public void forward(byte[] body) {
+		try {
+			dataOutputStream.writeBytes("HTTP/1.1 200 OK \r\n");
 
-		int contentLength = body.length;
+			int contentLength = body.length;
 
-		dataOutputStream.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
-		dataOutputStream.writeBytes("Content-Length: " + contentLength + "\r\n");
+			dataOutputStream.writeBytes("Content-Type: text/html;charset=utf-8\r\n");
+			dataOutputStream.writeBytes("Content-Length: " + contentLength + "\r\n");
 
-		writeHeaders();
+			writeHeaders();
 
-		dataOutputStream.writeBytes("\r\n");
-		dataOutputStream.write(body, 0, body.length);
-		dataOutputStream.flush();
+			dataOutputStream.writeBytes("\r\n");
+			dataOutputStream.write(body, 0, body.length);
+			dataOutputStream.flush();
+		} catch (IOException exception) {
+			throw new IllegalStateException("Failed to forward.");
+		}
 	}
 
-	public void sendRedirect(String filePath) throws IOException {
-		dataOutputStream.writeBytes("HTTP/1.1 302 FOUND \r\n");
+	public void sendRedirect(String filePath) {
+		try {
+			dataOutputStream.writeBytes("HTTP/1.1 302 FOUND \r\n");
 
-		byte[] body = Files.readAllBytes(new File("./webapp" + filePath).toPath());
-		int contentLength = body.length;
+			byte[] body = Files.readAllBytes(new File("./webapp" + filePath).toPath());
+			int contentLength = body.length;
 
-		dataOutputStream.writeBytes("Content-Type: " + getContentType(filePath) + ";charset=utf-8\r\n");
-		dataOutputStream.writeBytes("Content-Length: " + contentLength + "\r\n");
-		dataOutputStream.writeBytes("Location: " + filePath + "\r\n");
+			dataOutputStream.writeBytes("Content-Type: " + getContentType(filePath) + ";charset=utf-8\r\n");
+			dataOutputStream.writeBytes("Content-Length: " + contentLength + "\r\n");
+			dataOutputStream.writeBytes("Location: " + filePath + "\r\n");
 
-		writeHeaders();
+			writeHeaders();
 
-		dataOutputStream.writeBytes("\r\n");
-		dataOutputStream.write(body, 0, body.length);
-		dataOutputStream.flush();
+			dataOutputStream.writeBytes("\r\n");
+			dataOutputStream.write(body, 0, body.length);
+			dataOutputStream.flush();
+		} catch (IOException exception) {
+			throw new IllegalStateException("Failed to send redirect.");
+		}
 	}
 
 	private void writeHeaders() throws IOException {

@@ -6,16 +6,23 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import user.UserProcessor;
+import user.UserController;
 
 public class RequestHandler extends Thread {
 	private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
 
-	private static final int START_LINE = 0;
+	private static final String DEFAULT_CONTROLLER_KEY = "/";
+	private static final Map<String, Controller> CONTROLLER_MAP = Map.of("/user", new UserController(), DEFAULT_CONTROLLER_KEY, new DefaultController());
+
+	private static final String ROOT_PATH_GROUP_NAME = "rootPath";
+	private static final Pattern ROOT_PATH_REGEX = Pattern.compile("(?<" + ROOT_PATH_GROUP_NAME + ">/[^/]*)");
 
 	private Socket connection;
 
@@ -35,79 +42,27 @@ public class RequestHandler extends Thread {
 
 			RequestEntity requestEntity = RequestEntity.from(isr);
 			String requestPath = requestEntity.getPath();
-			String requestMethod = requestEntity.getMethod();
 
-			if (requestPath.equals("/user/create") && requestMethod.equals("POST")) {
-				signUp(dataOutputStream, requestEntity);
-			} else if (requestPath.equals("/user/login") && requestMethod.equals("POST")) {
-				login(dataOutputStream, requestEntity);
-			} else if (requestPath.equals("/user/list") && requestMethod.equals("GET")) {
-				getUserList(dataOutputStream, requestEntity);
-			} else if ((requestPath.equals("/") || requestPath.isBlank()) && requestMethod.equals("GET")) {
-				getRoot(dataOutputStream);
-			} else {
-				getResource(dataOutputStream, requestEntity);
-			}
+			Controller controller = getMappingController(requestPath);
+
+			ResponseEntity responseEntity = new ResponseEntity(dataOutputStream);
+
+			controller.service(requestEntity, responseEntity);
 		} catch (IOException ioException) {
 			log.error(ioException.getMessage());
 		}
 	}
 
-	private void getRoot(DataOutputStream dataOutputStream) throws IOException {
-		ResponseEntity responseEntity = new ResponseEntity(dataOutputStream);
+	private Controller getMappingController(String requestPath) {
+		Controller defaultController = CONTROLLER_MAP.get(DEFAULT_CONTROLLER_KEY);
+		Matcher matcher = ROOT_PATH_REGEX.matcher(requestPath);
 
-		responseEntity.forward("/index.html");
-	}
-
-	private void getResource(DataOutputStream dataOutputStream, RequestEntity requestEntity) throws IOException {
-		ResponseEntity responseEntity = new ResponseEntity(dataOutputStream);
-		String path = requestEntity.getPath();
-
-		responseEntity.forward(path);
-	}
-
-	private void getUserList(DataOutputStream dataOutputStream, RequestEntity requestEntity) throws IOException {
-		String loginedCookie = requestEntity.getCookie("logined");
-		boolean isLogined = Boolean.parseBoolean(loginedCookie);
-
-		ResponseEntity responseEntity = new ResponseEntity(dataOutputStream);
-
-		if (isLogined) {
-			byte[] userListHtmlByte = UserProcessor.getUsers().getBytes();
-			responseEntity.forward(userListHtmlByte);
-			return;
+		if (matcher.find()) {
+			String rootPath = matcher.group(ROOT_PATH_GROUP_NAME);
+			return CONTROLLER_MAP.getOrDefault(rootPath, defaultController);
 		}
 
-		responseEntity.forward("/user/login.html");
-	}
-
-	private void login(DataOutputStream dataOutputStream, RequestEntity requestEntity) throws IOException {
-		String userId = requestEntity.getParameter("userId");
-		String password = requestEntity.getParameter("password");
-
-		boolean isLoginSuccess = UserProcessor.isExistUser(userId, password);
-
-		ResponseEntity responseEntity = new ResponseEntity(dataOutputStream);
-
-		if (isLoginSuccess) {
-			responseEntity.addHeader("Set-Cookie", "logined=true;path=/;");
-			responseEntity.sendRedirect("/index.html");
-			return;
-		}
-
-		responseEntity.addHeader("Set-Cookie", "logined=false;path=/;");
-		responseEntity.sendRedirect("/user/login_failed.html");
-	}
-
-	private void signUp(DataOutputStream dataOutputStream, RequestEntity requestEntity) throws IOException {
-		String userId = requestEntity.getParameter("userId");
-		String password = requestEntity.getParameter("password");
-		String name = requestEntity.getParameter("name");
-		String email = requestEntity.getParameter("email");
-
-		UserProcessor.createUser(userId, password, name, email);
-
-		ResponseEntity responseEntity = new ResponseEntity(dataOutputStream);
-		responseEntity.sendRedirect("/index.html");
+		return defaultController;
 	}
 }
+

@@ -9,14 +9,14 @@ import java.util.Map;
 import util.HttpRequestUtils;
 
 public class RequestEntity {
-	private final String method;
+	private final HttpMethod method;
 	private final String path;
 	private final String protocol;
 	private final Map<String, String> headers;
 	private final Map<String, String> parameters;
 	private final Map<String, String> cookies;
 
-	public RequestEntity(String method, String path, String protocol, Map<String, String> headers, Map<String, String> parameters, Map<String, String> cookies) {
+	public RequestEntity(HttpMethod method, String path, String protocol, Map<String, String> headers, Map<String, String> parameters, Map<String, String> cookies) {
 		this.method = method;
 		this.path = path;
 		this.protocol = protocol;
@@ -31,7 +31,8 @@ public class RequestEntity {
 
 		String[] startLineElements = httpRequestContents.get(0).split(" ");
 
-		String method = HttpRequestUtils.getRequestMethod(startLineElements);
+		String methodString = HttpRequestUtils.getRequestMethod(startLineElements);
+		HttpMethod method = HttpMethod.from(methodString);
 		String path = HttpRequestUtils.getRequestPath(startLineElements);
 		String protocol = HttpRequestUtils.getRequestProtocol(startLineElements);
 
@@ -42,7 +43,7 @@ public class RequestEntity {
 		return new RequestEntity(method, path, protocol, headers, parameters, cookies);
 	}
 
-	public String getMethod() {
+	public HttpMethod getMethod() {
 		return method;
 	}
 
