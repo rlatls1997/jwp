@@ -37,7 +37,7 @@ public class UserController extends AbstractController {
 			return;
 		}
 
-		throw new IllegalStateException("Request path not found. path:" + path);
+		throw new UnsupportedOperationException("Request path not found. path:" + path);
 	}
 
 	private void getUserList(RequestEntity requestEntity, ResponseEntity responseEntity) {
@@ -45,7 +45,7 @@ public class UserController extends AbstractController {
 		boolean isLogined = Boolean.parseBoolean(loginedCookie);
 
 		if (isLogined) {
-			byte[] userListHtmlByte = getUsers().getBytes();
+			byte[] userListHtmlByte = getUserListHtml().getBytes();
 			responseEntity.forward(userListHtmlByte);
 			return;
 		}
@@ -95,7 +95,7 @@ public class UserController extends AbstractController {
 		return password.equals(user.getPassword());
 	}
 
-	private String getUsers() {
+	private String getUserListHtml() {
 		Collection<User> users = DataBase.findAll();
 
 		StringBuilder sb = new StringBuilder();

@@ -15,7 +15,7 @@ public class AbstractController implements Controller {
 			return;
 		}
 
-		throw new IllegalStateException("Request method isn't allowed. method:" + method);
+		throw new UnsupportedOperationException("Request method isn't allowed. method:" + method);
 	}
 
 	public void doGet(RequestEntity requestEntity, ResponseEntity responseEntity) {
