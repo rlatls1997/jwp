@@ -2,79 +2,48 @@ package webserver;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.Collections;
+import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import util.HttpRequestUtils;
-import util.IOUtils;
 
 public class RequestEntity {
-	private final String method;
+	private final HttpMethod method;
 	private final String path;
-	private final Map<String, String> body;
-	private final Map<String, String> queryStrings;
+	private final String protocol;
+	private final Map<String, String> headers;
+	private final Map<String, String> parameters;
 	private final Map<String, String> cookies;
 
-	public RequestEntity(String method, String path, Map<String, String> body, Map<String, String> queryStrings, Map<String, String> cookies) {
+	public RequestEntity(HttpMethod method, String path, String protocol, Map<String, String> headers, Map<String, String> parameters, Map<String, String> cookies) {
 		this.method = method;
 		this.path = path;
-		this.body = body;
-		this.queryStrings = queryStrings;
+		this.protocol = protocol;
+		this.headers = headers;
+		this.parameters = parameters;
 		this.cookies = cookies;
 	}
 
-	public static RequestEntity from(BufferedReader bufferedReader) throws IOException {
+	public static RequestEntity from(InputStreamReader inputStreamReader) throws IOException {
+		BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
 		List<String> httpRequestContents = HttpRequestUtils.getHttpRequestContents(bufferedReader);
 
-		String[] startLines = httpRequestContents.get(0)
-			.split(" ");
+		String[] startLineElements = httpRequestContents.get(0).split(" ");
 
-		String method = startLines[0];
-		String requestUrl = startLines[1];
+		String methodString = HttpRequestUtils.getRequestMethod(startLineElements);
+		HttpMethod method = HttpMethod.from(methodString);
+		String path = HttpRequestUtils.getRequestPath(startLineElements);
+		String protocol = HttpRequestUtils.getRequestProtocol(startLineElements);
 
-		int queryStringStartIndex = requestUrl.indexOf("?");
+		Map<String, String> headers = HttpRequestUtils.getHeaders(httpRequestContents);
+		Map<String, String> parameters = HttpRequestUtils.getParameters(bufferedReader, startLineElements, headers);
+		Map<String, String> cookies = HttpRequestUtils.parseCookies(headers.get("Cookie"));
 
-		String path;
-		Map<String, String> queryStrings;
-
-		if (queryStringStartIndex == -1) {
-			path = requestUrl;
-			queryStrings = Collections.emptyMap();
-		} else {
-			path = requestUrl.substring(0, queryStringStartIndex);
-			String wholeQueryString = requestUrl.substring(queryStringStartIndex);
-			queryStrings = HttpRequestUtils.parseQueryString(wholeQueryString);
-		}
-
-		Map<String, String> body = Collections.emptyMap();
-		Map<String, String> cookies = Collections.emptyMap();
-
-		for (String httpRequestContent : httpRequestContents) {
-			HttpRequestUtils.Pair pair = HttpRequestUtils.parseHeader(httpRequestContent);
-
-			if(Objects.isNull(pair)){
-				continue;
-			}
-
-			String headerName = pair.getKey();
-			String headerValue = pair.getValue();
-
-			if (headerName.equals("Content-Length")) {
-				String bodyString = IOUtils.readData(bufferedReader, Integer.parseInt(headerValue));
-				body = HttpRequestUtils.parseRequestBody(bodyString);
-			}
-
-			if (headerName.equals("Cookie")) {
-				cookies = HttpRequestUtils.parseCookies(headerValue);
-			}
-		}
-
-		return new RequestEntity(method, path, body, queryStrings, cookies);
+		return new RequestEntity(method, path, protocol, headers, parameters, cookies);
 	}
 
-	public String getMethod() {
+	public HttpMethod getMethod() {
 		return method;
 	}
 
@@ -82,15 +51,19 @@ public class RequestEntity {
 		return path;
 	}
 
-	public Map<String, String> getBody() {
-		return body;
+	public String getProtocol() {
+		return protocol;
 	}
 
-	public Map<String, String> getQueryStrings() {
-		return queryStrings;
+	public String getHeader(String header) {
+		return headers.get(header);
 	}
 
-	public Map<String, String> getCookies() {
-		return cookies;
+	public String getParameter(String parameter) {
+		return parameters.get(parameter);
+	}
+
+	public String getCookie(String cookie) {
+		return cookies.get(cookie);
 	}
 }
