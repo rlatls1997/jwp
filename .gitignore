@@ -1,11 +1,16 @@
+/.settings/
 .gradle
 .idea
 build
 /bin/
-/.settings/
 /target/
 /.classpath
 /.project
+/jwp-basic.iml
+/.idea/
+/tomcat.8080/
 /.idea
 *.iml
 .DS_Store
+webapp/WEB-INF/lib
+webapp/WEB-INF/classes
