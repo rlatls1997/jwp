@@ -1,6 +1,7 @@
 package next.web;
 
 import java.io.IOException;
+import java.util.Objects;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
@@ -8,6 +9,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import core.db.DataBase;
 import next.model.User;
@@ -25,8 +27,26 @@ public class UpdateUserFormServlet extends HttpServlet {
 
 	@Override
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		User user = new User(request.getParameter("userId"), request.getParameter("password"), request.getParameter("name"), request.getParameter("email"));
-		DataBase.updateUser(user);
-		response.sendRedirect("/user/list");
+		HttpSession session = request.getSession();
+		Object sessionUser = session.getAttribute("user");
+
+		if (Objects.isNull(sessionUser)) {
+			response.sendRedirect("/user/login");
+			return;
+		}
+
+		String targetUserId = request.getParameter("userId");
+
+		User castedSessionUser = (User)sessionUser;
+		String sessionUserId = castedSessionUser.getUserId();
+
+		if (targetUserId.equals(sessionUserId)) {
+			User user = new User(targetUserId, request.getParameter("password"), request.getParameter("name"), request.getParameter("email"));
+			DataBase.updateUser(user);
+			response.sendRedirect("/user/list");
+			return;
+		}
+
+		throw new IllegalStateException("session user isn't equals with user to update. sessionUserId:" + sessionUserId + ",castedUserId:" + castedSessionUser);
 	}
 }

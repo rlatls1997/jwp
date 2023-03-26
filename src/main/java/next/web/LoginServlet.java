@@ -19,6 +19,12 @@ import next.model.User;
 public class LoginServlet extends HttpServlet {
 
 	@Override
+	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		RequestDispatcher requestDispatcher = request.getRequestDispatcher("/user/login.jsp");
+		requestDispatcher.forward(request, response);
+	}
+
+	@Override
 	public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		String userId = request.getParameter("userId");
 		String password = request.getParameter("password");
