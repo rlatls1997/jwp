@@ -9,6 +9,7 @@ import java.util.Map;
 
 public class ResponseEntity {
 	private final Map<String, String> headers = new HashMap<>();
+	private final Map<String, String> cookies = new HashMap<>();
 	private final DataOutputStream dataOutputStream;
 
 	public ResponseEntity(DataOutputStream dataOutputStream) {
@@ -17,6 +18,10 @@ public class ResponseEntity {
 
 	public void addHeader(String key, String value) {
 		this.headers.put(key, value);
+	}
+
+	public void addCookie(String name, String value) {
+		cookies.put(name, value);
 	}
 
 	public void forward(String filePath) {
@@ -30,6 +35,7 @@ public class ResponseEntity {
 			dataOutputStream.writeBytes("Content-Length: " + contentLength + "\r\n");
 
 			writeHeaders();
+			writeCookies();
 
 			dataOutputStream.writeBytes("\r\n");
 			dataOutputStream.write(body, 0, body.length);
@@ -49,6 +55,7 @@ public class ResponseEntity {
 			dataOutputStream.writeBytes("Content-Length: " + contentLength + "\r\n");
 
 			writeHeaders();
+			writeCookies();
 
 			dataOutputStream.writeBytes("\r\n");
 			dataOutputStream.write(body, 0, body.length);
@@ -70,6 +77,7 @@ public class ResponseEntity {
 			dataOutputStream.writeBytes("Location: " + filePath + "\r\n");
 
 			writeHeaders();
+			writeCookies();
 
 			dataOutputStream.writeBytes("\r\n");
 			dataOutputStream.write(body, 0, body.length);
@@ -77,6 +85,19 @@ public class ResponseEntity {
 		} catch (IOException exception) {
 			throw new IllegalStateException("Failed to send redirect.");
 		}
+	}
+
+	private void writeCookies() throws IOException {
+		dataOutputStream.writeBytes("Set-Cookie: ");
+
+		for (Map.Entry<String, String> cookie : cookies.entrySet()) {
+			String name = cookie.getKey();
+			String value = cookie.getValue();
+
+			dataOutputStream.writeBytes(name + "=" + value + ";");
+		}
+
+		dataOutputStream.writeBytes("\r\n");
 	}
 
 	private void writeHeaders() throws IOException {

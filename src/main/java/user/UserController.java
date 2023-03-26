@@ -6,6 +6,8 @@ import java.util.Objects;
 import db.DataBase;
 import model.User;
 import webserver.AbstractController;
+import webserver.HttpSession;
+import webserver.HttpSessions;
 import webserver.RequestEntity;
 import webserver.ResponseEntity;
 
@@ -41,10 +43,10 @@ public class UserController extends AbstractController {
 	}
 
 	private void getUserList(RequestEntity requestEntity, ResponseEntity responseEntity) {
-		String loginedCookie = requestEntity.getCookie("logined");
-		boolean isLogined = Boolean.parseBoolean(loginedCookie);
+		HttpSession session = HttpSessions.getSession(requestEntity);
+		Object logined = session.getAttribute("logined");
 
-		if (isLogined) {
+		if (Objects.nonNull(logined) && (boolean)logined) {
 			byte[] userListHtmlByte = getUserListHtml().getBytes();
 			responseEntity.forward(userListHtmlByte);
 			return;
@@ -57,15 +59,17 @@ public class UserController extends AbstractController {
 		String userId = requestEntity.getParameter("userId");
 		String password = requestEntity.getParameter("password");
 
+		HttpSession session = HttpSessions.getSession(requestEntity);
+
 		boolean isLoginSuccess = isExistUser(userId, password);
 
 		if (isLoginSuccess) {
-			responseEntity.addHeader("Set-Cookie", "logined=true;path=/;");
+			session.setAttribute("logined", true);
 			responseEntity.sendRedirect("/index.html");
 			return;
 		}
 
-		responseEntity.addHeader("Set-Cookie", "logined=false;path=/;");
+		session.setAttribute("logined", false);
 		responseEntity.sendRedirect("/user/login_failed.html");
 	}
 

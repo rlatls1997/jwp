@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -23,6 +24,8 @@ public class RequestHandler extends Thread {
 
 	private static final String ROOT_PATH_GROUP_NAME = "rootPath";
 	private static final Pattern ROOT_PATH_REGEX = Pattern.compile("(?<" + ROOT_PATH_GROUP_NAME + ">/[^/]*)");
+
+	private static final String JSESSION = "JSESSION";
 
 	private Socket connection;
 
@@ -41,16 +44,27 @@ public class RequestHandler extends Thread {
 			DataOutputStream dataOutputStream = new DataOutputStream(out);
 
 			RequestEntity requestEntity = RequestEntity.from(isr);
+
 			String requestPath = requestEntity.getPath();
 
 			Controller controller = getMappingController(requestPath);
 
 			ResponseEntity responseEntity = new ResponseEntity(dataOutputStream);
 
+			if (isJSessionIdNotExist(requestEntity)) {
+				HttpSession httpSession = new HttpSession();
+				responseEntity.addCookie(JSESSION, httpSession.getId());
+				HttpSessions.addSession(httpSession);
+			}
+
 			controller.service(requestEntity, responseEntity);
 		} catch (IOException ioException) {
 			log.error(ioException.getMessage());
 		}
+	}
+
+	private boolean isJSessionIdNotExist(RequestEntity requestEntity) {
+		return Objects.isNull(requestEntity.getCookie(JSESSION));
 	}
 
 	private Controller getMappingController(String requestPath) {
