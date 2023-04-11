@@ -33,33 +33,11 @@ public class DispatcherServlet extends HttpServlet {
 
 	private static final Logger log = LoggerFactory.getLogger(DispatcherServlet.class);
 
-	private static final Map<String, Controller> CONTROLLER_MAP;
-
-	static {
-		Map<String, Controller> controllers = new HashMap<>();
-
-		HomeController homeController = new HomeController();
-		controllers.put("/", homeController);
-
-		controllers.put("/users", new ListUserController());
-		controllers.put("/users/create", new CreateUserController());
-		controllers.put("/users/update", new UpdateUserController());
-		controllers.put("/users/updateForm", new UpdateUserFormController());
-		controllers.put("/users/login", new LoginController());
-		controllers.put("/users/logout", new LogoutController());
-		controllers.put("/users/profile", new ProfileController());
-
-		controllers.put("/users/form", new ForwardController("/user/form.jsp"));
-		controllers.put("/users/loginForm", new ForwardController("/user/login.jsp"));
-
-		CONTROLLER_MAP = Collections.unmodifiableMap(controllers);
-	}
-
 	@Override
 	protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		String requestUri = request.getRequestURI();
 
-		Controller controller = CONTROLLER_MAP.get(requestUri);
+		Controller controller = RequestMapping.mapController(requestUri);
 		String command = controller.execute(request, response);
 
 		if (isRedirect(command)) {
