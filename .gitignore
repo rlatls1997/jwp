@@ -5,3 +5,11 @@
 /jwp-basic.iml
 /.idea/
 /tomcat.8080/
+
+/build
+/.gradle
+webapp/WEB-INF/lib
+webapp/WEB-INF/classes
+/jwp-basic.iml
+/.idea/
+/tomcat.8080/
