@@ -23,11 +23,7 @@ public class CreateUserController implements Controller {
 
 		UserDao userDao = new UserDao();
 
-		try {
-			userDao.insert(user);
-		} catch (SQLException exception) {
-			log.error(exception.getMessage());
-		}
+		userDao.insert(user);
 
 		return "redirect:/";
 	}
