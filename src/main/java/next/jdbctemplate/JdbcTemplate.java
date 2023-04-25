@@ -37,9 +37,14 @@ public class JdbcTemplate {
 		}
 	}
 
-	public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... objects) throws SQLException {
+	public <T> List<T> query(String sql, RowMapper<T> rowMapper, Object... objects) {
 		PreparedStatementSetter preparedStatementSetter = createPreparedStatementSetter(objects);
-		return query(sql, preparedStatementSetter, rowMapper);
+
+		try {
+			return query(sql, preparedStatementSetter, rowMapper);
+		} catch (SQLException sqlException) {
+			throw new RuntimeException("failed to execute queryForObject. sql:" + sql + "message:" + sqlException.getMessage());
+		}
 	}
 
 	private <T> List<T> query(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) throws SQLException {
@@ -68,9 +73,14 @@ public class JdbcTemplate {
 		}
 	}
 
-	public  <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... objects) throws SQLException {
+	public <T> T queryForObject(String sql, RowMapper<T> rowMapper, Object... objects) {
 		PreparedStatementSetter preparedStatementSetter = createPreparedStatementSetter(objects);
-		return queryForObject(sql, preparedStatementSetter, rowMapper);
+
+		try {
+			return queryForObject(sql, preparedStatementSetter, rowMapper);
+		} catch (SQLException sqlException) {
+			throw new RuntimeException("failed to execute queryForObject. sql:" + sql + "message:" + sqlException.getMessage());
+		}
 	}
 
 	private <T> T queryForObject(String sql, PreparedStatementSetter preparedStatementSetter, RowMapper<T> rowMapper) throws SQLException {

@@ -1,6 +1,5 @@
 package next.dao;
 
-import java.sql.SQLException;
 import java.util.List;
 
 import next.jdbctemplate.JdbcTemplate;
@@ -24,13 +23,13 @@ public class UserDao {
 			user.getUserId());
 	}
 
-	public List<User> findAll() throws SQLException {
+	public List<User> findAll() {
 		return new JdbcTemplate().query("SELECT userId, password, name, email FROM USERS",
 			resultSet -> new User(resultSet.getString("userId"), resultSet.getString("password"), resultSet.getString("name"),
 				resultSet.getString("email")));
 	}
 
-	public User findByUserId(String userId) throws SQLException {
+	public User findByUserId(String userId) {
 		return new JdbcTemplate().queryForObject("SELECT userId, password, name, email FROM USERS WHERE userid=?",
 			resultSet -> new User(resultSet.getString("userId"), resultSet.getString("password"), resultSet.getString("name"),
 				resultSet.getString("email")),
