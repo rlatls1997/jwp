@@ -35,7 +35,19 @@ public class JdbcTemplate {
 		return queryForObject(sql, rm, createPreparedStatementSetter(parameters));
 	}
 
-	public long execute(String sql,  Object... parameters) {
+	public boolean execute(String sql, Object... parameters){
+		PreparedStatementSetter pss = createPreparedStatementSetter(parameters);
+
+		try (Connection conn = ConnectionManager.getConnection();
+			 PreparedStatement pstmt = conn.prepareStatement(sql)) {
+			pss.setParameters(pstmt);
+			return pstmt.execute();
+		} catch (SQLException e) {
+			throw new DataAccessException(e);
+		}
+	}
+
+	public long insert(String sql,  Object... parameters) {
 		PreparedStatementSetter pss = createPreparedStatementSetter(parameters);
 		ResultSet rs = null;
 

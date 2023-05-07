@@ -79,7 +79,7 @@
                                             </li>
                                             <li>
                                                 <form class="form-delete" action="/questions/413/answers/1405" method="POST">
-                                                    <input type="hidden" name="_method" value="DELETE">
+                                                    <input type="hidden" name="answerId" value="${answer.answerId}" />
                                                     <button type="submit" class="link-delete-article">삭제</button>
                                                 </form>
                                             </li>

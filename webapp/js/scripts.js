@@ -12,6 +12,7 @@ $(document).ready(function () {/* jQuery toggle layout */
 
 String.prototype.format = function () {
     var args = arguments;
+
     return this.replace(/{(\d+)}/g, function (match, number) {
         return typeof args[number] != 'undefined'
             ? args[number]
@@ -33,15 +34,38 @@ function addAnswer(e) {
         data: queryString,
         dataType: 'json',
         error: onError,
-        success: onSuccess,
+        success: onSuccessAddAnswer,
     })
 }
 
-function onSuccess(json, status) {
+function onSuccessAddAnswer(json, status) {
     let answerTemplate = $("#answerTemplate").html();
-    const template = answerTemplate.format(json.writer, new Date(json.createdDate), json.contents, json.answerId);
+    const template = answerTemplate.format(json.writer, new Date(json.createdDate), json.contents, json.answerId, json.answerId);
     $(".qna-comment-slipp-articles").prepend(template);
 }
 
 function onError() {
+}
+
+$(".qna-comment").click(deleteAnswer);
+
+function deleteAnswer(e) {
+    e.preventDefault();
+
+    const target = $(e.target);
+
+    if (target.hasClass("link-delete-article")) {
+        const queryString = target.closest(".form-delete").serialize();
+
+        $.ajax({
+            type: 'post',
+            url: '/api/qna/deleteAnswer',
+            data: queryString,
+            dataType: 'json',
+            error: onError,
+            success: function () {
+                target.closest(".article").remove();
+            },
+        })
+    }
 }

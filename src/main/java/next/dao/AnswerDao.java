@@ -33,11 +33,18 @@ public class AnswerDao {
 		return jdbcTemplate.queryForObject(sql, rm, answerId);
 	}
 
+	public boolean delete(long answerId){
+		JdbcTemplate jdbcTemplate = new JdbcTemplate();
+		String sql = "DELETE FROM ANSWERS WHERE answerId=?";
+
+		return jdbcTemplate.execute(sql, answerId);
+	}
+
 	public Answer insertAndSelectSavedAnswer(Answer answer) {
 		JdbcTemplate jdbcTemplate = new JdbcTemplate();
 		String sql = "INSERT INTO ANSWERS (writer, contents, createdDate, questionId) VALUES (?, ?, CURRENT_TIMESTAMP(), ?)";
 
-		long generatedKey = jdbcTemplate.execute(sql, answer.getWriter(), answer.getContents(), answer.getQuestionId());
+		long generatedKey = jdbcTemplate.insert(sql, answer.getWriter(), answer.getContents(), answer.getQuestionId());
 
 		RowMapper<Answer> rm = rs -> new Answer(rs.getLong("answerId"),
 			rs.getString("writer"),
