@@ -6,6 +6,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import next.controller.AddAnswerController;
 import next.controller.CreateUserController;
 import next.controller.HomeController;
 import next.controller.ListUserController;
@@ -33,6 +34,8 @@ public class RequestMapping {
 		mappings.put("/users/update", new UpdateUserController());
 		mappings.put("/qna/update", new UpdateUserController());
 		mappings.put("/qna/show", new QnaShowController());
+		mappings.put("/api/qna/addAnswer", new AddAnswerController());
+
 		logger.info("Initialized Request Mapping!");
 	}
 

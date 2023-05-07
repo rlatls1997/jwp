@@ -4,11 +4,17 @@ import java.util.Date;
 
 public class Answer {
 
-	private final long answerId;
+	private long answerId;
 	private final String writer;
 	private final String contents;
-	private final Date createdDate;
+	private Date createdDate;
 	private final long questionId;
+
+	public Answer(String writer, String contents, long questionId) {
+		this.writer = writer;
+		this.contents = contents;
+		this.questionId = questionId;
+	}
 
 	public Answer(long answerId, String writer, String contents, Date createdDate, long questionId) {
 		this.answerId = answerId;

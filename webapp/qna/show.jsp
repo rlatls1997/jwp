@@ -87,13 +87,19 @@
                                     </div>
                                 </article>
                             </c:forEach>
-                            <form class="submit-write">
-                                <div class="form-group" style="padding:14px;">
-                                    <textarea class="form-control" placeholder="Update your status"></textarea>
-                                </div>
-                                <button class="btn btn-success pull-right" type="button">Post</button>
-                                <div class="clearfix"/>
-                            </form>
+                            <div class="answerWrite">
+                                <form name="answer" method="post">
+                                    <input type="hidden" name="questionId" value="${question.questionId}">
+                                    <div class="form-group col-lg-4" style="padding-top:10px;">
+                                        <input class="form-control" id="writer" name="writer" placeholder="이름">
+                                    </div>
+                                    <div class="form-group col-lg-12">
+                                        <textarea name="contents" id="contents" class="form-control" placeholder=""></textarea>
+                                    </div>
+                                    <input class="btn btn-success pull-right" type="submit" value="답변하기" />
+                                    <div class="clearfix" />
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -101,6 +107,36 @@
         </div>
     </div>
 </div>
+
+<script type="text/template" id="answerTemplate">
+    <article class="article">
+        <div class="article-header">
+            <div class="article-header-thumb">
+                <img src="https://graph.facebook.com/v2.3/1324855987/picture" class="article-author-thumb" alt="">
+            </div>
+            <div class="article-header-text">
+                {0}
+                <div class="article-header-time">{1}</div>
+            </div>
+        </div>
+        <div class="article-doc comment-doc">
+            {2}
+        </div>
+        <div class="article-util">
+            <ul class="article-util-list">
+                <li>
+                    <a class="link-modify-article" href="/api/qna/updateAnswer/{3}">수정</a>
+                </li>
+                <li>
+                    <form class="form-delete" action="/api/qna/deleteAnswer" method="POST">
+                        <input type="hidden" name="answerId" value="{4}" />
+                        <button type="submit" class="link-delete-article">삭제</button>
+                    </form>
+                </li>
+            </ul>
+        </div>
+    </article>
+</script>
 
 <%@ include file="/include/footer.jspf" %>
 </body>
