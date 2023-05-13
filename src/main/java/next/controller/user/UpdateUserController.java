@@ -6,13 +6,13 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import core.mvc.Controller;
+import core.mvc.AbstractController;
 import next.controller.UserSessionUtils;
 import next.dao.UserDao;
 import next.model.User;
 import next.view.ModelAndView;
 
-public class UpdateUserController implements Controller {
+public class UpdateUserController extends AbstractController {
 	private static final Logger log = LoggerFactory.getLogger(UpdateUserController.class);
 
 	@Override
@@ -28,9 +28,6 @@ public class UpdateUserController implements Controller {
 		log.debug("Update User : {}", updateUser);
 		user.update(updateUser);
 
-		ModelAndView modelAndView = new ModelAndView();
-		modelAndView.setViewName("redirect:/");
-
-		return modelAndView;
+		return jspView("redirect:/");
 	}
 }

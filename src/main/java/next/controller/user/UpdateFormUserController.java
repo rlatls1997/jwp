@@ -3,13 +3,13 @@ package next.controller.user;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import core.mvc.Controller;
+import core.mvc.AbstractController;
 import next.controller.UserSessionUtils;
 import next.dao.UserDao;
 import next.model.User;
 import next.view.ModelAndView;
 
-public class UpdateFormUserController implements Controller {
+public class UpdateFormUserController extends AbstractController {
 
 	@Override
 	public ModelAndView execute(HttpServletRequest req, HttpServletResponse resp) throws Exception {
@@ -20,10 +20,7 @@ public class UpdateFormUserController implements Controller {
 			throw new IllegalStateException("다른 사용자의 정보를 수정할 수 없습니다.");
 		}
 
-		ModelAndView modelAndView = new ModelAndView();
-		modelAndView.setModelAttribute("user", user);
-		modelAndView.setViewName("/user/updateForm.jsp");
-
-		return modelAndView;
+		return jspView("/user/updateForm.jsp")
+			.setModelAttribute("user", user);
 	}
 }

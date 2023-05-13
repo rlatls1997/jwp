@@ -7,19 +7,20 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 public class ModelAndView {
-	private String viewName;
-	private Map<String, Object> model = new HashMap<>();
+	private final View view;
+	private final Map<String, Object> model = new HashMap<>();
+
+	public ModelAndView(View view) {
+		this.view = view;
+	}
 
 	public void execute(HttpServletRequest request, HttpServletResponse response) throws Exception {
-		View view = viewName.isBlank() ? new JsonView() : new JspView(viewName);
-		view.render(model, request, response);
+		this.view.render(model, request, response);
 	}
 
-	public void setViewName(String viewName) {
-		this.viewName = viewName;
-	}
-
-	public void setModelAttribute(String name, Object object) {
+	public ModelAndView setModelAttribute(String name, Object object) {
 		this.model.put(name, object);
+
+		return this;
 	}
 }

@@ -3,10 +3,9 @@ package core.mvc;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import next.view.JspView;
 import next.view.ModelAndView;
 
-public class ForwardController implements Controller {
+public class ForwardController extends AbstractController {
 	private String forwardUrl;
 
 	public ForwardController(String forwardUrl) {
@@ -18,9 +17,6 @@ public class ForwardController implements Controller {
 
 	@Override
 	public ModelAndView execute(HttpServletRequest req, HttpServletResponse resp) throws Exception {
-		ModelAndView modelAndView = new ModelAndView();
-		modelAndView.setViewName(forwardUrl);
-
-		return modelAndView;
+		return jspView(forwardUrl);
 	}
 }
