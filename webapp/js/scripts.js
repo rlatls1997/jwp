@@ -19,7 +19,9 @@ function addAnswer(e) {
 function onSuccess(json, status){
   var answer = json.answer;
   var answerTemplate = $("#answerTemplate").html();
-  var template = answerTemplate.format(answer.writer, new Date(answer.createdDate), answer.contents, answer.answerId, answer.answerId);
+  var createDate = new Date(answer.createdDate);
+  var dateString = `${createDate.getFullYear()}-${createDate.getMonth()}-${createDate.getDate()} ${createDate.getHours()}:${createDate.getMinutes()}:${createDate.getSeconds()}`;
+  var template = answerTemplate.format(answer.writer, dateString, answer.contents, answer.answerId, answer.answerId);
   $(".qna-comment-slipp-articles").prepend(template);
 }
 
