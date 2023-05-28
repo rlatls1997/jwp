@@ -23,6 +23,9 @@ function onSuccess(json, status){
   var dateString = `${createDate.getFullYear()}-${createDate.getMonth()}-${createDate.getDate()} ${createDate.getHours()}:${createDate.getMinutes()}:${createDate.getSeconds()}`;
   var template = answerTemplate.format(answer.writer, dateString, answer.contents, answer.answerId, answer.answerId);
   $(".qna-comment-slipp-articles").prepend(template);
+
+  var countOfComment = json.countOfComment;
+  $("#qna-count-of-comment").html(countOfComment);
 }
 
 function onError(xhr, status) {
