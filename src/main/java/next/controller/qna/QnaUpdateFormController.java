@@ -7,9 +7,13 @@ import javax.servlet.http.HttpSession;
 import core.mvc.AbstractController;
 import core.mvc.ModelAndView;
 import next.controller.UserSessionUtils;
+import next.dao.QuestionDao;
+import next.model.Question;
 import next.model.User;
 
-public class QnaFormController extends AbstractController {
+public class QnaUpdateFormController extends AbstractController {
+
+	private final QuestionDao questionDao = new QuestionDao();
 
 	@Override
 	public ModelAndView execute(HttpServletRequest request, HttpServletResponse response) throws Exception {
@@ -20,10 +24,16 @@ public class QnaFormController extends AbstractController {
 		}
 
 		User user = UserSessionUtils.getUserFromSession(session);
+		String userName = user.getName();
 
-		ModelAndView modelAndView = jspView("/qna/form.jsp");
-		modelAndView.addObject("writer", user.getName());
+		long questionId = Long.parseLong(request.getParameter("questionId"));
+		Question question = questionDao.findById(questionId);
 
-		return modelAndView;
+		if (userName.equals(question.getWriter())) {
+			return jspView("/qna/updateForm.jsp")
+				.addObject("question", question);
+		}
+
+		return jspView("redirect:/");
 	}
 }

@@ -76,4 +76,13 @@ public class QuestionDao {
 			+ "WHERE questionId = ?";
 		jdbcTemplate.update(sql, countOfComment, questionId);
 	}
+
+	public void updateQuestion(String title, String contents, long questionId) {
+		JdbcTemplate jdbcTemplate = new JdbcTemplate();
+		String sql = "UPDATE QUESTIONS "
+			+ "SET title = ? "
+			+ ", contents = ? "
+			+ "WHERE questionId = ?";
+		jdbcTemplate.update(sql, title, contents, questionId);
+	}
 }
