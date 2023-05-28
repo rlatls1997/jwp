@@ -10,13 +10,13 @@ import core.jdbc.RowMapper;
 
 public class UserDao {
     public void insert(User user) {
-        JdbcTemplate jdbcTemplate = new JdbcTemplate();
+        JdbcTemplate jdbcTemplate = JdbcTemplate.getInstance();
         String sql = "INSERT INTO USERS VALUES (?, ?, ?, ?)";
         jdbcTemplate.update(sql, user.getUserId(), user.getPassword(), user.getName(), user.getEmail());
     }
 
     public User findByUserId(String userId) {
-        JdbcTemplate jdbcTemplate = new JdbcTemplate();
+        JdbcTemplate jdbcTemplate = JdbcTemplate.getInstance();
         String sql = "SELECT userId, password, name, email FROM USERS WHERE userid=?";
 
         RowMapper<User> rm = new RowMapper<User>() {
@@ -31,7 +31,7 @@ public class UserDao {
     }
 
     public List<User> findAll() throws SQLException {
-        JdbcTemplate jdbcTemplate = new JdbcTemplate();
+        JdbcTemplate jdbcTemplate = JdbcTemplate.getInstance();
         String sql = "SELECT userId, password, name, email FROM USERS";
 
         RowMapper<User> rm = new RowMapper<User>() {
@@ -46,7 +46,7 @@ public class UserDao {
     }
 
     public void update(User user) {
-        JdbcTemplate jdbcTemplate = new JdbcTemplate();
+        JdbcTemplate jdbcTemplate = JdbcTemplate.getInstance();
         String sql = "UPDATE USERS set password = ?, name = ?, email = ? WHERE userId = ?";
         jdbcTemplate.update(sql, user.getPassword(), user.getName(), user.getEmail(), user.getUserId());
     }
