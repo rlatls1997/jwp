@@ -7,13 +7,12 @@ import javax.servlet.http.HttpSession;
 import core.mvc.AbstractController;
 import core.mvc.ModelAndView;
 import next.controller.UserSessionUtils;
-import next.dao.QuestionDao;
-import next.model.Question;
 import next.model.User;
+import next.service.qna.QnaService;
 
-public class UpdateQuestionController extends AbstractController {
+public class QnaDeleteController extends AbstractController {
 
-	private final QuestionDao questionDao = new QuestionDao();
+	private final QnaService qnaService = new QnaService();
 
 	@Override
 	public ModelAndView execute(HttpServletRequest request, HttpServletResponse response) throws Exception {
@@ -27,16 +26,8 @@ public class UpdateQuestionController extends AbstractController {
 		String userName = user.getName();
 
 		long questionId = Long.parseLong(request.getParameter("questionId"));
-		Question question = questionDao.findById(questionId);
 
-		if (userName.equals(question.getWriter())) {
-			String title = request.getParameter("title");
-			String contents = request.getParameter("contents");
-			questionDao.update(title, contents, questionId);
-
-			return jspView("redirect:/qna/show?questionId=" + questionId);
-		}
-
+		qnaService.deleteQuestion(questionId, userName);
 		return jspView("redirect:/");
 	}
 }

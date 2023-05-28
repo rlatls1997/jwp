@@ -77,12 +77,19 @@ public class QuestionDao {
 		jdbcTemplate.update(sql, countOfComment, questionId);
 	}
 
-	public void updateQuestion(String title, String contents, long questionId) {
+	public void update(String title, String contents, long questionId) {
 		JdbcTemplate jdbcTemplate = JdbcTemplate.getInstance();
 		String sql = "UPDATE QUESTIONS "
 			+ "SET title = ? "
 			+ ", contents = ? "
 			+ "WHERE questionId = ?";
 		jdbcTemplate.update(sql, title, contents, questionId);
+	}
+
+	public void delete(long questionId) {
+		JdbcTemplate jdbcTemplate = JdbcTemplate.getInstance();
+		String sql = "DELETE FROM QUESTIONS "
+			+ "WHERE questionId = ?";
+		jdbcTemplate.update(sql, questionId);
 	}
 }
