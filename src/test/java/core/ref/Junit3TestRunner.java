@@ -8,10 +8,11 @@ public class Junit3TestRunner {
 	@Test
 	public void run() throws Exception {
 		Class<Junit3Test> clazz = Junit3Test.class;
+
 		Arrays.stream(clazz.getMethods()).forEach(method -> {
 			if (method.getName().startsWith("test")) {
 				try {
-					method.invoke(clazz.newInstance());
+					method.invoke(Junit3Test.class.newInstance());
 				} catch (Exception exception) {
 					exception.printStackTrace();
 				}
