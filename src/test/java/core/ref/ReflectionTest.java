@@ -1,8 +1,7 @@
 package core.ref;
 
-import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
 
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -31,8 +30,24 @@ public class ReflectionTest {
 	}
 
 	@Test
-	public void privateFieldAccess() {
+	public void privateFieldAccess() throws IllegalAccessException {
 		Class<Student> clazz = Student.class;
+
+		Student student = new Student();
+
+		for (Field declaredField : clazz.getDeclaredFields()) {
+			declaredField.setAccessible(true);
+
+			if (declaredField.getName().equals("name")) {
+				declaredField.set(student, "김신혁");
+			}
+
+			if (declaredField.getName().equals("age")) {
+				declaredField.set(student, 27);
+			}
+		}
+
+		logger.debug("student : {}", student);
 		logger.debug(clazz.getName());
 	}
 }
