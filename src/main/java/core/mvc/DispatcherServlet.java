@@ -15,7 +15,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import core.nmvc.AnnotationHandlerMapping;
-import core.nmvc.HandlerExecution;
+import core.nmvc.ControllerHandlerAdapter;
+import core.nmvc.HandlerAdapter;
+import core.nmvc.HandlerExecutionHandlerAdapter;
 import core.nmvc.HandlerMapping;
 
 @WebServlet(name = "dispatcher", urlPatterns = "/", loadOnStartup = 1)
@@ -25,12 +27,17 @@ public class DispatcherServlet extends HttpServlet {
 
 	private final List<HandlerMapping> handlerMappings = new ArrayList<>();
 
+	private final List<HandlerAdapter> handlerAdapters = new ArrayList<>();
+
 	@Override
-	public void init() throws ServletException {
+	public void init() {
 		handlerMappings.add(new LegacyHandlerMapping());
 		handlerMappings.add(new AnnotationHandlerMapping("next.controller"));
 
 		handlerMappings.forEach(HandlerMapping::initialize);
+
+		handlerAdapters.add(new ControllerHandlerAdapter());
+		handlerAdapters.add(new HandlerExecutionHandlerAdapter());
 	}
 
 	@Override
@@ -42,13 +49,7 @@ public class DispatcherServlet extends HttpServlet {
 		ModelAndView mav;
 
 		try {
-			if (handler instanceof Controller) {
-				mav = ((Controller)handler).execute(request, resp);
-			} else if (handler instanceof HandlerExecution) {
-				mav = ((HandlerExecution)handler).handle(request, resp);
-			} else {
-				throw new IllegalStateException("handler is not allowed type.");
-			}
+			mav = execute(handler, request, resp);
 		} catch (Throwable exception) {
 			logger.error("Exception : ", exception);
 			throw new ServletException(exception.getMessage());
@@ -62,6 +63,16 @@ public class DispatcherServlet extends HttpServlet {
 			logger.error("Exception : ", exception);
 			throw new ServletException(exception.getMessage());
 		}
+	}
+
+	private ModelAndView execute(Object handler, HttpServletRequest request, HttpServletResponse response) throws Exception {
+		for (HandlerAdapter handlerAdapter : handlerAdapters) {
+			if (handlerAdapter.supports(handler)) {
+				return handlerAdapter.handle(request, response, handler);
+			}
+		}
+
+		throw new IllegalStateException("DispatcherServlet execute fail. request:" + request);
 	}
 
 	private Object getHandler(HttpServletRequest request) {

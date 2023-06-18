@@ -10,26 +10,28 @@ import core.annotation.Controller;
 
 public class ControllerScanner {
 
-	private final Map<Class<?>, Object> controllers = new HashMap<>();
+	private final Reflections reflections;
 
-	public Set<Class<?>> getControllers() {
-		return controllers.keySet();
+	public ControllerScanner(Object... basePackage) {
+		this.reflections = new Reflections(basePackage);
 	}
 
-	public Object getControllerInstance(Class<?> controller) {
-		return controllers.get(controller);
+	public Map<Class<?>, Object> getControllers() {
+		Set<Class<?>> controllerClasses = reflections.getTypesAnnotatedWith(Controller.class);
+		return instantiateControllers(controllerClasses);
 	}
 
-	public void instantiateControllers(Object[] basePackage) {
-		Reflections reflections = new Reflections(basePackage);
-		Set<Class<?>> controllers = reflections.getTypesAnnotatedWith(Controller.class);
+	public Map<Class<?>, Object> instantiateControllers(Set<Class<?>> controllerClasses) {
+		Map<Class<?>, Object> controllers = new HashMap<>();
 
-		for (Class<?> controller : controllers) {
+		for (Class<?> controller : controllerClasses) {
 			try {
-				this.controllers.put(controller, controller.getConstructor().newInstance());
+				controllers.put(controller, controller.getConstructor().newInstance());
 			} catch (Exception exception) {
 				exception.printStackTrace();
 			}
 		}
+
+		return controllers;
 	}
 }

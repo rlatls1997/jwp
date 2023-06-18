@@ -18,19 +18,19 @@ public class AnnotationHandlerMapping implements HandlerMapping {
 
 	private Map<HandlerKey, HandlerExecution> handlerExecutions = Maps.newHashMap();
 
-	private ControllerScanner controllerScanner = new ControllerScanner();
+	private ControllerScanner controllerScanner;
 
 	public AnnotationHandlerMapping(Object... basePackage) {
 		this.basePackage = basePackage;
+		this.controllerScanner = new ControllerScanner(basePackage);
 	}
 
 	@Override
 	public void initialize() {
-		controllerScanner.instantiateControllers(basePackage);
-		Set<Class<?>> controllers = controllerScanner.getControllers();
+		Map<Class<?>, Object> controllers = controllerScanner.getControllers();
 
-		for (Class<?> controller : controllers) {
-			initHandlerExecutions(controller);
+		for (Map.Entry<Class<?>, Object> controllerEntry : controllers.entrySet()) {
+			initHandlerExecutions(controllerEntry);
 		}
 	}
 
@@ -38,15 +38,14 @@ public class AnnotationHandlerMapping implements HandlerMapping {
 		return new HandlerKey(requestMapping.value(), requestMapping.method());
 	}
 
-	private void initHandlerExecutions(Class<?> controller) {
-		Set<Method> methods = ReflectionUtils.getAllMethods(controller, ReflectionUtils.withAnnotation(RequestMapping.class));
+	private void initHandlerExecutions(Map.Entry<Class<?>, Object> controllerEntry) {
+		Set<Method> methods = ReflectionUtils.getAllMethods(controllerEntry.getKey(), ReflectionUtils.withAnnotation(RequestMapping.class));
 
 		for (Method method : methods) {
 			RequestMapping requestMapping = method.getAnnotation(RequestMapping.class);
 
 			try {
-				Object controllerInstance = controllerScanner.getControllerInstance(controller);
-				handlerExecutions.put(createHandlerKey(requestMapping), HandlerExecution.from(controllerInstance, method));
+				handlerExecutions.put(createHandlerKey(requestMapping), HandlerExecution.from(controllerEntry.getValue(), method));
 			} catch (Exception exception) {
 				exception.printStackTrace();
 			}
