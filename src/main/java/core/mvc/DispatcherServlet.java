@@ -50,15 +50,7 @@ public class DispatcherServlet extends HttpServlet {
 
 		try {
 			mav = execute(handler, request, resp);
-		} catch (Throwable exception) {
-			logger.error("Exception : ", exception);
-			throw new ServletException(exception.getMessage());
-		}
-
-		View view = mav.getView();
-
-		try {
-			view.render(mav.getModel(), request, resp);
+			mav.getView().render(mav.getModel(), request, resp);
 		} catch (Throwable exception) {
 			logger.error("Exception : ", exception);
 			throw new ServletException(exception.getMessage());
