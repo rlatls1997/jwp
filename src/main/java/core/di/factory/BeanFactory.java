@@ -1,6 +1,7 @@
 package core.di.factory;
 
 import java.lang.reflect.Constructor;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -9,6 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
+
+import core.annotation.Controller;
 
 public class BeanFactory {
 	private static final Logger logger = LoggerFactory.getLogger(BeanFactory.class);
@@ -68,5 +71,17 @@ public class BeanFactory {
 
 		//@Inject 애너테이션이 붙은 생성자가 있다면 의존 빈 가져와서 인스턴스 생성 후 빈 등록
 		beans.put(concreteClass, injectedConstructor.newInstance(parameters));
+	}
+
+	public Map<Class<?>, Object> getControllers() {
+		Map<Class<?>, Object> controllerMap = new HashMap<>();
+
+		for (Class<?> beanClass : beans.keySet()) {
+			if (Objects.nonNull(beanClass.getAnnotation(Controller.class))) {
+				controllerMap.put(beanClass, beans.get(beanClass));
+			}
+		}
+
+		return controllerMap;
 	}
 }
