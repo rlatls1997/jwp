@@ -1,5 +1,6 @@
 package core.web.mvc;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Set;
@@ -13,57 +14,69 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
+import core.annotation.Controller;
 import core.annotation.RequestMapping;
 import core.annotation.RequestMethod;
+import core.di.factory.ApplicationContext;
 import core.di.factory.BeanFactory;
-import core.di.factory.BeanScanner;
+import core.di.factory.ClasspathBeanDefinitionScanner;
 
 public class AnnotationHandlerMapping implements HandlerMapping {
-    private static final Logger logger = LoggerFactory.getLogger(AnnotationHandlerMapping.class);
+	private static final Logger logger = LoggerFactory.getLogger(AnnotationHandlerMapping.class);
 
-    private Object[] basePackage;
+	private Object[] basePackage;
 
-    private Map<HandlerKey, HandlerExecution> handlerExecutions = Maps.newHashMap();
+	private Map<HandlerKey, HandlerExecution> handlerExecutions = Maps.newHashMap();
 
-    public AnnotationHandlerMapping(Object... basePackage) {
-        this.basePackage = basePackage;
-    }
+	public AnnotationHandlerMapping(Object... basePackage) {
+		this.basePackage = basePackage;
+	}
 
-    public void initialize() {
-        BeanScanner scanner = new BeanScanner(basePackage);
-        BeanFactory beanFactory = new BeanFactory(scanner.scan());
-        beanFactory.initialize();
-        Map<Class<?>, Object> controllers = beanFactory.getControllers();
-        Set<Method> methods = getRequestMappingMethods(controllers.keySet());
-        for (Method method : methods) {
-            RequestMapping rm = method.getAnnotation(RequestMapping.class);
-            logger.debug("register handlerExecution : url is {}, method is {}", rm.value(), method);
-            handlerExecutions.put(createHandlerKey(rm),
-                    new HandlerExecution(controllers.get(method.getDeclaringClass()), method));
-        }
+	public void initialize() {
+		ApplicationContext applicationContext = new ApplicationContext(basePackage);
+		Map<Class<?>, Object> controllers = getControllers(applicationContext);
 
-        logger.info("Initialized AnnotationHandlerMapping!");
-    }
+		Set<Method> methods = getRequestMappingMethods(controllers.keySet());
+		for (Method method : methods) {
+			RequestMapping rm = method.getAnnotation(RequestMapping.class);
+			logger.debug("register handlerExecution : url is {}, method is {}", rm.value(), method);
+			handlerExecutions.put(createHandlerKey(rm),
+				new HandlerExecution(controllers.get(method.getDeclaringClass()), method));
+		}
 
-    private HandlerKey createHandlerKey(RequestMapping rm) {
-        return new HandlerKey(rm.value(), rm.method());
-    }
+		logger.info("Initialized AnnotationHandlerMapping!");
+	}
 
-    @SuppressWarnings("unchecked")
-    private Set<Method> getRequestMappingMethods(Set<Class<?>> controlleers) {
-        Set<Method> requestMappingMethods = Sets.newHashSet();
-        for (Class<?> clazz : controlleers) {
-            requestMappingMethods
-                    .addAll(ReflectionUtils.getAllMethods(clazz, ReflectionUtils.withAnnotation(RequestMapping.class)));
-        }
-        return requestMappingMethods;
-    }
+	public Map<Class<?>, Object> getControllers(ApplicationContext applicationContext) {
+		Map<Class<?>, Object> controllers = Maps.newHashMap();
+		for (Class<?> clazz : applicationContext.getBeanClasses()) {
+			Annotation annotation = clazz.getAnnotation(Controller.class);
+			if (annotation != null) {
+				controllers.put(clazz, applicationContext.getBean(clazz));
+			}
+		}
+		return controllers;
+	}
 
-    @Override
-    public HandlerExecution getHandler(HttpServletRequest request) {
-        String requestUri = request.getRequestURI();
-        RequestMethod rm = RequestMethod.valueOf(request.getMethod().toUpperCase());
-        logger.debug("requestUri : {}, requestMethod : {}", requestUri, rm);
-        return handlerExecutions.get(new HandlerKey(requestUri, rm));
-    }
+	private HandlerKey createHandlerKey(RequestMapping rm) {
+		return new HandlerKey(rm.value(), rm.method());
+	}
+
+	@SuppressWarnings("unchecked")
+	private Set<Method> getRequestMappingMethods(Set<Class<?>> controlleers) {
+		Set<Method> requestMappingMethods = Sets.newHashSet();
+		for (Class<?> clazz : controlleers) {
+			requestMappingMethods
+				.addAll(ReflectionUtils.getAllMethods(clazz, ReflectionUtils.withAnnotation(RequestMapping.class)));
+		}
+		return requestMappingMethods;
+	}
+
+	@Override
+	public HandlerExecution getHandler(HttpServletRequest request) {
+		String requestUri = request.getRequestURI();
+		RequestMethod rm = RequestMethod.valueOf(request.getMethod().toUpperCase());
+		logger.debug("requestUri : {}, requestMethod : {}", requestUri, rm);
+		return handlerExecutions.get(new HandlerKey(requestUri, rm));
+	}
 }
