@@ -9,6 +9,7 @@ import java.util.Set;
 
 import com.google.common.collect.Sets;
 
+import core.annotation.Bean;
 import core.annotation.Inject;
 
 public class BeanFactoryUtils {
@@ -34,6 +35,10 @@ public class BeanFactoryUtils {
 
 	public static Set<Method> getInjectedMethods(Class<?> clazz) {
 		return getAllMethods(clazz, withAnnotation(Inject.class));
+	}
+
+	public static Set<Method> getBeanMethods(Class<?> clazz){
+		return getAllMethods(clazz, withAnnotation(Bean.class));
 	}
 
 	/**

@@ -24,16 +24,15 @@ import core.di.factory.ClasspathBeanDefinitionScanner;
 public class AnnotationHandlerMapping implements HandlerMapping {
 	private static final Logger logger = LoggerFactory.getLogger(AnnotationHandlerMapping.class);
 
-	private Object[] basePackage;
-
 	private Map<HandlerKey, HandlerExecution> handlerExecutions = Maps.newHashMap();
 
-	public AnnotationHandlerMapping(Object... basePackage) {
-		this.basePackage = basePackage;
+	private final ApplicationContext applicationContext;
+
+	public AnnotationHandlerMapping(ApplicationContext applicationContext) {
+		this.applicationContext = applicationContext;
 	}
 
 	public void initialize() {
-		ApplicationContext applicationContext = new ApplicationContext(basePackage);
 		Map<Class<?>, Object> controllers = getControllers(applicationContext);
 
 		Set<Method> methods = getRequestMappingMethods(controllers.keySet());

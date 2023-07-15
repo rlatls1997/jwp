@@ -2,6 +2,8 @@ package core.di.factory;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -37,11 +39,31 @@ public class BeanFactory implements BeanDefinitionRegistry {
 			return (T)bean;
 		}
 
+		BeanDefinition beanDefinition = beanDefinitions.get(clazz);
+
+		if (beanDefinition instanceof AnnotatedBeanDefinition) {
+			bean = createAnnotatedBean(beanDefinition);
+			beans.put(clazz, bean);
+			return (T)bean;
+		}
+
 		Class<?> concreteClass = findConcreteClass(clazz);
-		BeanDefinition beanDefinition = beanDefinitions.get(concreteClass);
-		bean = inject(beanDefinition);
+		BeanDefinition concreteBeanDefinition = beanDefinitions.get(concreteClass);
+
+		bean = inject(concreteBeanDefinition);
 		beans.put(concreteClass, bean);
 		return (T)bean;
+	}
+
+	private Object createAnnotatedBean(BeanDefinition beanDefinition) {
+		AnnotatedBeanDefinition annotatedBeanDefinition = (AnnotatedBeanDefinition)beanDefinition;
+		Method method = annotatedBeanDefinition.getMethod();
+
+		try {
+			return method.invoke(getBean(method.getDeclaringClass()));
+		} catch (Exception exception) {
+			throw new RuntimeException(exception);
+		}
 	}
 
 	private Class<?> findConcreteClass(Class<?> clazz) {
