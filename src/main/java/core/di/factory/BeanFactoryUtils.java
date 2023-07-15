@@ -7,6 +7,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Set;
 
+import javax.annotation.PostConstruct;
+
 import com.google.common.collect.Sets;
 
 import core.annotation.Bean;
@@ -39,6 +41,10 @@ public class BeanFactoryUtils {
 
 	public static Set<Method> getBeanMethods(Class<?> clazz){
 		return getAllMethods(clazz, withAnnotation(Bean.class));
+	}
+
+	public static Set<Method> getPostConstructorMethods(Class<?> clazz){
+		return getAllMethods(clazz, withAnnotation(PostConstruct.class));
 	}
 
 	/**
