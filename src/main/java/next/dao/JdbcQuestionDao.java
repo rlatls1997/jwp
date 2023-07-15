@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.List;
 
+import core.annotation.Inject;
 import core.annotation.Repository;
 import core.jdbc.JdbcTemplate;
 import core.jdbc.KeyHolder;
@@ -16,7 +17,8 @@ import next.model.Question;
 
 @Repository
 public class JdbcQuestionDao implements QuestionDao {
-    private JdbcTemplate jdbcTemplate = JdbcTemplate.getInstance();
+    @Inject
+    private JdbcTemplate jdbcTemplate;
 
     @Override
     public Question insert(Question question) {

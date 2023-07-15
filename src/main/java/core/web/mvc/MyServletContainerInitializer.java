@@ -13,7 +13,7 @@ public class MyServletContainerInitializer implements ServletContainerInitialize
 
 	@Override
 	public void onStartup(Set<Class<?>> set, ServletContext servletContext) throws ServletException {
-		AnnotationHandlerMapping ahm = new AnnotationHandlerMapping("next");
+		AnnotationHandlerMapping ahm = new AnnotationHandlerMapping("next", "core");
 		ahm.initialize();
 		ServletRegistration.Dynamic dispatcher = servletContext.addServlet("dispatcher", new DispatcherServlet(ahm));
 		dispatcher.setLoadOnStartup(1);
