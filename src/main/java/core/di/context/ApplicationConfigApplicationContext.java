@@ -1,4 +1,4 @@
-package core.di.factory;
+package core.di.context;
 
 import java.util.Arrays;
 import java.util.Set;
@@ -6,22 +6,25 @@ import java.util.Set;
 import com.google.common.collect.Sets;
 
 import core.annotation.ComponentScan;
+import core.di.factory.AnnotatedBeanDefinitionReader;
+import core.di.factory.DefaultBeanFactory;
+import core.di.factory.ClasspathBeanDefinitionScanner;
 
 public class ApplicationConfigApplicationContext implements ApplicationContext {
 
-	private final BeanFactory beanFactory;
+	private final DefaultBeanFactory defaultBeanFactory;
 
 	public ApplicationConfigApplicationContext(Class<?>... configClass) {
 		Object[] basePackages = findBasePackages(configClass);
-		beanFactory = new BeanFactory();
+		defaultBeanFactory = new DefaultBeanFactory();
 
-		AnnotatedBeanDefinitionReader annotatedBeanDefinitionReader = new AnnotatedBeanDefinitionReader(beanFactory);
-		annotatedBeanDefinitionReader.register(configClass);
+		AnnotatedBeanDefinitionReader annotatedBeanDefinitionReader = new AnnotatedBeanDefinitionReader(defaultBeanFactory);
+		annotatedBeanDefinitionReader.loadBeanDefinitions(configClass);
 
-		ClasspathBeanDefinitionScanner classpathBeanDefinitionScanner = new ClasspathBeanDefinitionScanner(beanFactory);
+		ClasspathBeanDefinitionScanner classpathBeanDefinitionScanner = new ClasspathBeanDefinitionScanner(defaultBeanFactory);
 		classpathBeanDefinitionScanner.doScan(basePackages);
 
-		beanFactory.initialize();
+		defaultBeanFactory.initialize();
 	}
 
 	public Object[] findBasePackages(Class<?>[] classes) {
@@ -36,10 +39,10 @@ public class ApplicationConfigApplicationContext implements ApplicationContext {
 	}
 
 	public <T> T getBean(Class<T> clazz) {
-		return beanFactory.getBean(clazz);
+		return defaultBeanFactory.getBean(clazz);
 	}
 
 	public Set<Class<?>> getBeanClasses() {
-		return beanFactory.getBeanClasses();
+		return defaultBeanFactory.getBeanClasses();
 	}
 }

@@ -9,8 +9,8 @@ import javax.servlet.ServletRegistration;
 import javax.servlet.annotation.HandlesTypes;
 
 import core.comfig.Config;
-import core.di.factory.ApplicationConfigApplicationContext;
-import core.di.factory.ApplicationContext;
+import core.di.context.ApplicationConfigApplicationContext;
+import core.di.context.ApplicationContext;
 
 @HandlesTypes(WebApplicationInitializer.class)
 public class MyServletContainerInitializer implements ServletContainerInitializer {

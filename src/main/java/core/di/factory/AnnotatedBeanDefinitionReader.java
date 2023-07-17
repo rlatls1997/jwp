@@ -3,7 +3,13 @@ package core.di.factory;
 import java.lang.reflect.Method;
 import java.util.Set;
 
-public class AnnotatedBeanDefinitionReader {
+import core.di.factory.config.AnnotatedBeanDefinition;
+import core.di.factory.config.BeanDefinition;
+import core.di.factory.config.DefaultBeanDefinition;
+import core.di.factory.support.BeanDefinitionReader;
+import core.di.factory.support.BeanDefinitionRegistry;
+
+public class AnnotatedBeanDefinitionReader implements BeanDefinitionReader {
 
 	private final BeanDefinitionRegistry beanDefinitionRegistry;
 
@@ -11,14 +17,16 @@ public class AnnotatedBeanDefinitionReader {
 		this.beanDefinitionRegistry = beanDefinitionRegistry;
 	}
 
-	public void register(Class<?>... classes) {
-		for (Class<?> clazz : classes) {
-			registerBean(clazz);
+	@Override
+	public void loadBeanDefinitions(Class<?>... annotatedClasses) {
+		for (Class<?> clazz : annotatedClasses) {
+			loadBeanDefinition(clazz);
 		}
 	}
 
-	public void registerBean(Class<?> clazz) {
-		beanDefinitionRegistry.registerBeanDefinition(clazz, new BeanDefinition(clazz));
+
+	public void loadBeanDefinition(Class<?> clazz) {
+		beanDefinitionRegistry.registerBeanDefinition(clazz, new DefaultBeanDefinition(clazz));
 		Set<Method> methodSet = BeanFactoryUtils.getBeanMethods(clazz);
 
 		for (Method method : methodSet) {

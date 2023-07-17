@@ -1,8 +1,8 @@
-package core.di.factory;
+package core.di.factory.config;
 
 import java.lang.reflect.Method;
 
-public class AnnotatedBeanDefinition extends BeanDefinition {
+public class AnnotatedBeanDefinition extends DefaultBeanDefinition {
 	private final Method method;
 
 	public AnnotatedBeanDefinition(Class<?> clazz, Method method) {
